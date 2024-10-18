@@ -16,7 +16,7 @@ use crate::entity::{CasdoorConfig, CasdoorUser};
 
 use jsonwebtoken::{Algorithm, DecodingKey, Validation};
 use oauth2::basic::BasicClient;
-use oauth2::reqwest::http_client;
+use oauth2::reqwest::async_http_client;
 use oauth2::{AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenResponse, TokenUrl};
 
 pub struct AuthService<'a> {
@@ -29,7 +29,7 @@ impl<'a> AuthService<'a> {
         Self { config }
     }
 
-    pub fn get_auth_token(&self, code: String) -> Result<String, Box<dyn std::error::Error>> {
+    pub async fn get_auth_token(&self, code: String) -> Result<String, Box<dyn std::error::Error>> {
         let client_id = ClientId::new(self.config.client_id.clone());
         let client_secret = ClientSecret::new(self.config.client_secret.clone());
         let auth_url = AuthUrl::new(format!(
@@ -43,7 +43,10 @@ impl<'a> AuthService<'a> {
         let code = AuthorizationCode::new(code);
 
         let client = BasicClient::new(client_id, Some(client_secret), auth_url, Some(token_url));
-        let token_res = client.exchange_code(code).request(http_client)?;
+        let token_res = client
+            .exchange_code(code)
+            .request_async(async_http_client)
+            .await?;
 
         Ok(token_res.access_token().secret().to_string())
     }
