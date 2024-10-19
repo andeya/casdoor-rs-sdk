@@ -65,7 +65,8 @@ async fn test_get_and_parse_auth_tokens() {
     let auth_src = AuthService::new(&conf);
 
     let token = auth_src
-        .get_auth_token("71b645e73381caeb2c66".to_string()).await
+        .get_auth_token("71b645e73381caeb2c66".to_string())
+        .await
         .unwrap();
 
     let user = auth_src.parse_jwt_token(token).unwrap();
