@@ -1,6 +1,6 @@
 [package]
 name = "casdoor-rust-sdk"
-version ="1.3.0"
+version = "1.3.0"
 edition = "2021"
 license = "Apache-2.0"
 description = "Rust client SDK for Casdoor"
@@ -23,11 +23,12 @@ urlencoding = "2.1.0"
 oauth2 = "4.1"
 toml = "0.5.9"
 serde_derive = "1.0"
-
+getset2 = "0.2"
+anyhow = "1"
 
 [dev-dependencies]
 iron = "0.6.1"
 router = "0.6.0"
 urlencoding = "2.1.0"
 url = "2.2.2"
-hyper = {version = "0.14.19", features = ["server"]}
+hyper = { version = "0.14.19", features = ["server"] }

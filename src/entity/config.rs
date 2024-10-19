@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use getset2::Getters;
 use serde_derive::Deserialize;
 use std::{fs::File, io::Read};
 
 /// CasdoorConfig is the core configuration.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Getters)]
+#[getset(get = "pub")]
 pub struct CasdoorConfig {
     pub(crate) endpoint: String,
     pub(crate) client_id: String,

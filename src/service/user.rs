@@ -14,28 +14,30 @@
 
 use std::fmt::Display;
 
-use http::StatusCode;
+use serde::{Deserialize, Serialize};
 
-use crate::entity::{CasdoorConfig, CasdoorUser};
+use crate::entity::{ApiResponse, CasdoorConfig, CasdoorUser, UserOpAction};
 
-pub struct UserService<'a> {
-    config: &'a CasdoorConfig,
-}
-
-enum Op {
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum UserOp {
     Add,
     Delete,
     Update,
 }
 
-impl Display for Op {
+impl Display for UserOp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Op::Add => write!(f, "add-user"),
-            Op::Delete => write!(f, "delete-user"),
-            Op::Update => write!(f, "update-user"),
+            UserOp::Add => write!(f, "add-user"),
+            UserOp::Delete => write!(f, "delete-user"),
+            UserOp::Update => write!(f, "update-user"),
         }
     }
+}
+
+pub struct UserService<'a> {
+    config: &'a CasdoorConfig,
 }
 
 #[allow(dead_code)]
@@ -44,7 +46,7 @@ impl<'a> UserService<'a> {
         Self { config }
     }
 
-    pub async fn get_users(&self) -> Result<Vec<CasdoorUser>, Box<dyn std::error::Error>> {
+    pub async fn get_users(&self) -> anyhow::Result<Vec<CasdoorUser>> {
         let url = format!(
             "{}/api/get-users?owner={}&clientId={}&clientSecret={}",
             self.config.endpoint,
@@ -53,15 +55,16 @@ impl<'a> UserService<'a> {
             self.config.client_secret
         );
 
-        let json = reqwest::Client::new().get(url).send().await?.json().await?;
-        Ok(serde_json::from_value(json)?)
+        let res: ApiResponse<Vec<CasdoorUser>> =
+            reqwest::Client::new().get(url).send().await?.json().await?;
+        res.into_data_default()
     }
 
     pub async fn get_sorted_users(
         &self,
         sorter: String,
         limit: i32,
-    ) -> Result<Vec<CasdoorUser>, Box<dyn std::error::Error>> {
+    ) -> anyhow::Result<Vec<CasdoorUser>> {
         let url = format!(
             "{}/api/get-sorted-users?owner={}&clientId={}&clientSecret={}&sorter={}&limit={}",
             self.config.endpoint,
@@ -72,14 +75,12 @@ impl<'a> UserService<'a> {
             limit
         );
 
-        let json = reqwest::Client::new().get(url).send().await?.json().await?;
-        Ok(serde_json::from_value(json)?)
+        let res: ApiResponse<Vec<CasdoorUser>> =
+            reqwest::Client::new().get(url).send().await?.json().await?;
+        res.into_data_default()
     }
 
-    pub async fn get_user_count(
-        &self,
-        is_online: String,
-    ) -> Result<i64, Box<dyn std::error::Error>> {
+    pub async fn get_user_count(&self, is_online: String) -> anyhow::Result<i64> {
         let url = format!(
             "{}/api/get-user-count?owner={}&clientId={}&clientSecret={}&isOnline={}",
             self.config.endpoint,
@@ -89,11 +90,11 @@ impl<'a> UserService<'a> {
             is_online
         );
 
-        let json = reqwest::Client::new().get(url).send().await?.json().await?;
-        Ok(serde_json::from_value(json)?)
+        let res: ApiResponse<i64> = reqwest::Client::new().get(url).send().await?.json().await?;
+        res.into_data_default()
     }
 
-    pub async fn get_user(&self, name: String) -> Result<CasdoorUser, Box<dyn std::error::Error>> {
+    pub async fn get_user(&self, name: String) -> anyhow::Result<Option<CasdoorUser>> {
         let url = format!(
             "{}/api/get-user?id={}/{}&clientId={}&clientSecret={}",
             self.config.endpoint,
@@ -103,37 +104,31 @@ impl<'a> UserService<'a> {
             self.config.client_secret
         );
 
-        let json = reqwest::Client::new().get(url).send().await?.json().await?;
-        Ok(serde_json::from_value(json)?)
+        let res: ApiResponse<CasdoorUser> =
+            reqwest::Client::new().get(url).send().await?.json().await?;
+        res.into_data()
     }
 
-    pub async fn get_user_with_email(
-        &self,
-        name: String,
-        email: String,
-    ) -> Result<CasdoorUser, Box<dyn std::error::Error>> {
+    pub async fn get_user_with_email(&self, email: String) -> anyhow::Result<Option<CasdoorUser>> {
         let url = format!(
-            "{}/api/get-user?id={}/{}&owner={}&clientId={}&clientSecret={}&email={}",
+            "{}/api/get-user?owner={}&clientId={}&clientSecret={}&email={}",
             self.config.endpoint,
-            self.config.org_name,
-            name,
             self.config.org_name,
             self.config.client_id,
             self.config.client_secret,
             email
         );
 
-        println!("{}", url);
-
-        let json = reqwest::Client::new().get(url).send().await?.json().await?;
-        Ok(serde_json::from_value(json)?)
+        let res: ApiResponse<CasdoorUser> =
+            reqwest::Client::new().get(url).send().await?.json().await?;
+        res.into_data()
     }
 
-    async fn modify_user(
+    pub async fn modify_user(
         &self,
-        op: Op,
-        user: CasdoorUser,
-    ) -> Result<StatusCode, Box<dyn std::error::Error>> {
+        op: UserOp,
+        user: &CasdoorUser,
+    ) -> anyhow::Result<UserOpAction> {
         let url = format!(
             "{}/api/{}?id={}/{}&clientId={}&clientSecret={}",
             self.config.endpoint,
@@ -144,29 +139,25 @@ impl<'a> UserService<'a> {
             self.config.client_secret
         );
 
-        let res = reqwest::Client::new().post(url).json(&user).send().await?;
-        let status = res.status();
-        Ok(status)
+        let res: ApiResponse<UserOpAction> = reqwest::Client::new()
+            .post(url)
+            .json(user)
+            .send()
+            .await?
+            .json()
+            .await?;
+        res.into_data_default()
     }
 
-    pub async fn add_user(
-        &self,
-        user: CasdoorUser,
-    ) -> Result<StatusCode, Box<dyn std::error::Error>> {
-        self.modify_user(Op::Add, user).await
+    pub async fn add_user(&self, user: &CasdoorUser) -> anyhow::Result<UserOpAction> {
+        self.modify_user(UserOp::Add, user).await
     }
 
-    pub async fn delete_user(
-        &self,
-        user: CasdoorUser,
-    ) -> Result<StatusCode, Box<dyn std::error::Error>> {
-        self.modify_user(Op::Delete, user).await
+    pub async fn delete_user(&self, user: &CasdoorUser) -> anyhow::Result<UserOpAction> {
+        self.modify_user(UserOp::Delete, user).await
     }
 
-    pub async fn update_user(
-        &self,
-        user: CasdoorUser,
-    ) -> Result<StatusCode, Box<dyn std::error::Error>> {
-        self.modify_user(Op::Update, user).await
+    pub async fn update_user(&self, user: &CasdoorUser) -> anyhow::Result<UserOpAction> {
+        self.modify_user(UserOp::Update, user).await
     }
 }

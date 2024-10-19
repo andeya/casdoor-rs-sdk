@@ -19,8 +19,7 @@ fn abs_path(path: &str) -> Result<String, Box<dyn std::error::Error>> {
     Ok(absolute_path.to_str().unwrap().to_string())
 }
 
-#[tokio::main]
-#[test]
+#[tokio::test]
 async fn test_get_users() {
     let conf = CasdoorConfig::from_toml(abs_path("./conf.toml").unwrap().as_str()).unwrap();
     let user_service = UserService::new(&conf);
@@ -28,8 +27,7 @@ async fn test_get_users() {
     assert!(!users.is_empty());
 }
 
-#[tokio::main]
-#[test]
+#[tokio::test]
 async fn test_get_sorted_users() {
     let conf = CasdoorConfig::from_toml(abs_path("./conf.toml").unwrap().as_str()).unwrap();
     let user_service = UserService::new(&conf);
@@ -40,8 +38,7 @@ async fn test_get_sorted_users() {
     assert!(!users.is_empty());
 }
 
-#[tokio::main]
-#[test]
+#[tokio::test]
 async fn test_get_user_count() {
     let conf = CasdoorConfig::from_toml(abs_path("./conf.toml").unwrap().as_str()).unwrap();
     let user_service = UserService::new(&conf);
@@ -49,66 +46,78 @@ async fn test_get_user_count() {
     assert!(count == 1);
 }
 
-#[tokio::main]
-#[test]
+#[tokio::test]
 async fn test_get_user() {
     let conf = CasdoorConfig::from_toml(abs_path("./conf.toml").unwrap().as_str()).unwrap();
     let user_service = UserService::new(&conf);
-    let user = user_service.get_user("admin".to_string()).await.unwrap();
+    let user = user_service
+        .get_user("admin".to_string())
+        .await
+        .unwrap()
+        .unwrap_or_default();
     assert!(user.owner == "built-in");
 }
 
-#[tokio::main]
-#[test]
+#[tokio::test]
 async fn test_get_user_with_email() {
     let conf = CasdoorConfig::from_toml(abs_path("./conf.toml").unwrap().as_str()).unwrap();
     let user_service = UserService::new(&conf);
     let user = user_service
-        .get_user_with_email("admin".to_string(), "admin@example.com".to_string())
+        .get_user_with_email("admin@example.com".to_string())
         .await
-        .unwrap();
+        .unwrap()
+        .unwrap_or_default();
     assert!(user.email == "admin@example.com");
 }
 
-#[tokio::main]
-#[test]
+#[tokio::test]
 async fn test_add_user() {
     let conf = CasdoorConfig::from_toml(abs_path("./conf.toml").unwrap().as_str()).unwrap();
     let user_service = UserService::new(&conf);
-    let user = user_service.get_user("admin".to_string()).await.unwrap();
+    let user = user_service
+        .get_user("admin".to_string())
+        .await
+        .unwrap()
+        .unwrap_or_default();
 
     let new_user = CasdoorUser {
         name: "new_user".to_string(),
         ..user
     };
 
-    let code = user_service.add_user(new_user).await.unwrap();
-    assert_eq!(code, 200);
+    let res = user_service.add_user(&new_user).await.unwrap();
+    println!("{res:?}");
 }
 
-#[tokio::main]
-#[test]
+#[tokio::test]
 async fn test_update_user() {
     let conf = CasdoorConfig::from_toml(abs_path("./conf.toml").unwrap().as_str()).unwrap();
     let user_service = UserService::new(&conf);
-    let user = user_service.get_user("new_user".to_string()).await.unwrap();
+    let user = user_service
+        .get_user("new_user".to_string())
+        .await
+        .unwrap()
+        .unwrap_or_default();
 
     let new_user = CasdoorUser {
         email: "change@example.com".to_string(),
         ..user
     };
 
-    let code = user_service.update_user(new_user).await.unwrap();
-    assert_eq!(code, 200);
+    let res = user_service.update_user(&new_user).await.unwrap();
+    println!("{res:?}");
 }
 
-#[tokio::main]
-#[test]
+#[tokio::test]
 async fn test_delete_user() {
     let conf = CasdoorConfig::from_toml(abs_path("./conf.toml").unwrap().as_str()).unwrap();
     let user_service = UserService::new(&conf);
-    let user = user_service.get_user("new_user".to_string()).await.unwrap();
+    let user = user_service
+        .get_user("new_user".to_string())
+        .await
+        .unwrap()
+        .unwrap_or_default();
 
-    let code = user_service.delete_user(user).await.unwrap();
-    assert_eq!(code, 200);
+    let res = user_service.delete_user(&user).await.unwrap();
+    println!("{res:?}");
 }
