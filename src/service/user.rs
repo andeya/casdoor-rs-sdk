@@ -14,7 +14,8 @@
 
 use std::fmt::Display;
 
-use serde::{Deserialize, Serialize};
+use http::Method;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use crate::entity::{ApiResponse, CasdoorConfig, CasdoorUser};
 
@@ -90,25 +91,39 @@ impl Display for UserOpAction {
 pub struct UserService<'a> {
     config: &'a CasdoorConfig,
 }
-
+const NONE_BODY: Option<&()> = None::<&()>;
 #[allow(dead_code)]
 impl<'a> UserService<'a> {
     pub fn new(config: &'a CasdoorConfig) -> Self {
         Self { config }
     }
 
-    pub async fn get_users(&self) -> anyhow::Result<Vec<CasdoorUser>> {
-        let url = format!(
-            "{}/api/get-users?owner={}&clientId={}&clientSecret={}",
-            self.config.endpoint,
-            self.config.org_name,
-            self.config.client_id,
-            self.config.client_secret
-        );
+    async fn new_request<Data: DeserializeOwned + Default>(
+        &self,
+        method: Method,
+        url_path: impl AsRef<str>,
+        body: Option<&impl Serialize>,
+    ) -> reqwest::Result<ApiResponse<Data, ()>> {
+        let mut req = reqwest::Client::new()
+            .request(method, self.config.endpoint.clone() + url_path.as_ref())
+            .basic_auth(
+                self.config.client_id.clone(),
+                Some(self.config.client_secret.clone()),
+            );
+        if let Some(body) = body {
+            req = req.json(body);
+        }
+        req.send().await?.json::<ApiResponse<Data, ()>>().await
+    }
 
-        let res: ApiResponse<Vec<CasdoorUser>> =
-            reqwest::Client::new().get(url).send().await?.json().await?;
-        res.into_data_default()
+    pub async fn get_users(&self) -> anyhow::Result<Vec<CasdoorUser>> {
+        self.new_request(
+            Method::GET,
+            format!("/api/get-users?owner={}", self.config.org_name),
+            NONE_BODY,
+        )
+        .await?
+        .into_data_default()
     }
 
     pub async fn get_sorted_users(
@@ -116,116 +131,94 @@ impl<'a> UserService<'a> {
         sorter: String,
         limit: i32,
     ) -> anyhow::Result<Vec<CasdoorUser>> {
-        let url = format!(
-            "{}/api/get-sorted-users?owner={}&clientId={}&clientSecret={}&sorter={}&limit={}",
-            self.config.endpoint,
-            self.config.org_name,
-            self.config.client_id,
-            self.config.client_secret,
-            sorter,
-            limit
-        );
-
-        let res: ApiResponse<Vec<CasdoorUser>> =
-            reqwest::Client::new().get(url).send().await?.json().await?;
-        res.into_data_default()
+        self.new_request(
+            Method::GET,
+            format!(
+                "/api/get-sorted-users?owner={}&sorter={}&limit={}",
+                self.config.org_name, sorter, limit
+            ),
+            NONE_BODY,
+        )
+        .await?
+        .into_data_default()
     }
 
     pub async fn get_user_count(&self, is_online: QueryUserSet) -> anyhow::Result<i64> {
-        let url = format!(
-            "{}/api/get-user-count?owner={}&clientId={}&clientSecret={}&isOnline={}",
-            self.config.endpoint,
-            self.config.org_name,
-            self.config.client_id,
-            self.config.client_secret,
-            is_online
-        );
-        let res: ApiResponse<i64> = reqwest::Client::new().get(url).send().await?.json().await?;
-        res.into_data_default()
+        self.new_request(
+            Method::GET,
+            format!(
+                "/api/get-user-count?owner={}&isOnline={}",
+                self.config.org_name, is_online
+            ),
+            NONE_BODY,
+        )
+        .await?
+        .into_data_default()
     }
 
     pub async fn get_user(&self, name: String) -> anyhow::Result<Option<CasdoorUser>> {
-        let url = format!(
-            "{}/api/get-user?id={}/{}&clientId={}&clientSecret={}",
-            self.config.endpoint,
-            self.config.org_name,
-            name,
-            self.config.client_id,
-            self.config.client_secret
-        );
-
-        let res: ApiResponse<CasdoorUser> =
-            reqwest::Client::new().get(url).send().await?.json().await?;
-        res.into_data()
+        self.new_request(
+            Method::GET,
+            format!("/api/get-user?id={}/{}", self.config.org_name, name),
+            NONE_BODY,
+        )
+        .await?
+        .into_data()
     }
 
     pub async fn get_user_by_email(&self, email: String) -> anyhow::Result<Option<CasdoorUser>> {
-        let url = format!(
-            "{}/api/get-user?owner={}&clientId={}&clientSecret={}&email={}",
-            self.config.endpoint,
-            self.config.org_name,
-            self.config.client_id,
-            self.config.client_secret,
-            email
-        );
-
-        let res: ApiResponse<CasdoorUser> =
-            reqwest::Client::new().get(url).send().await?.json().await?;
-        res.into_data()
+        self.new_request(
+            Method::GET,
+            format!(
+                "/api/get-user?owner={}&email={}",
+                self.config.org_name, email
+            ),
+            NONE_BODY,
+        )
+        .await?
+        .into_data()
     }
 
     pub async fn get_user_by_phone(&self, phone: String) -> anyhow::Result<Option<CasdoorUser>> {
-        let url = format!(
-            "{}/api/get-user?owner={}&clientId={}&clientSecret={}&phone={}",
-            self.config.endpoint,
-            self.config.org_name,
-            self.config.client_id,
-            self.config.client_secret,
-            phone
-        );
-
-        let res: ApiResponse<CasdoorUser> =
-            reqwest::Client::new().get(url).send().await?.json().await?;
-        res.into_data()
+        self.new_request(
+            Method::GET,
+            format!(
+                "/api/get-user?owner={}&phone={}",
+                self.config.org_name, phone
+            ),
+            NONE_BODY,
+        )
+        .await?
+        .into_data()
     }
 
-    pub async fn get_user_by_id(&self, user_id: String) -> anyhow::Result<Option<CasdoorUser>> {
-        let url = format!(
-            "{}/api/get-user?owner={}&clientId={}&clientSecret={}&userId={}",
-            self.config.endpoint,
-            self.config.org_name,
-            self.config.client_id,
-            self.config.client_secret,
-            user_id
-        );
-
-        let res: ApiResponse<CasdoorUser> =
-            reqwest::Client::new().get(url).send().await?.json().await?;
-        res.into_data()
+    pub async fn get_user_by_user_id(
+        &self,
+        user_id: String,
+    ) -> anyhow::Result<Option<CasdoorUser>> {
+        self.new_request(
+            Method::GET,
+            format!(
+                "/api/get-user?owner={}&userId={}",
+                self.config.org_name, user_id
+            ),
+            NONE_BODY,
+        )
+        .await?
+        .into_data()
     }
 
     pub async fn modify_user(&self, args: ModifyUserArgs) -> anyhow::Result<UserOpAction> {
-        let mut url = format!(
-            "{}/api/{}?id={}/{}&clientId={}&clientSecret={}",
-            self.config.endpoint,
-            args.action,
-            args.user.owner,
-            args.user.name,
-            self.config.client_id,
-            self.config.client_secret
+        let mut url_path = format!(
+            "/api/{}?id={}/{}",
+            args.action, args.user.owner, args.user.name,
         );
         if args.columns.len() > 0 {
-            url += &format!("&columns={}", args.columns.join(","));
+            url_path += &format!("&columns={}", args.columns.join(","));
         }
-
-        let res: ApiResponse<UserOpAction> = reqwest::Client::new()
-            .post(url)
-            .json(&args.user)
-            .send()
+        self.new_request(Method::POST, url_path, Some(&args.user))
             .await?
-            .json()
-            .await?;
-        res.into_data_default()
+            .into_data_default()
     }
 
     pub async fn add_user(
