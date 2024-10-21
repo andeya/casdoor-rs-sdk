@@ -66,7 +66,7 @@ async fn test_get_user_with_email() {
     let conf = CasdoorConfig::from_toml(abs_path("./conf.toml").unwrap().as_str()).unwrap();
     let user_service = UserService::new(&conf);
     let user = user_service
-        .get_user_with_email("admin@example.com".to_string())
+        .get_user_by_email("admin@example.com".to_string())
         .await
         .unwrap()
         .unwrap_or_default();

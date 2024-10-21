@@ -159,7 +159,7 @@ impl<'a> UserService<'a> {
         res.into_data()
     }
 
-    pub async fn get_user_with_email(&self, email: String) -> anyhow::Result<Option<CasdoorUser>> {
+    pub async fn get_user_by_email(&self, email: String) -> anyhow::Result<Option<CasdoorUser>> {
         let url = format!(
             "{}/api/get-user?owner={}&clientId={}&clientSecret={}&email={}",
             self.config.endpoint,
@@ -167,6 +167,36 @@ impl<'a> UserService<'a> {
             self.config.client_id,
             self.config.client_secret,
             email
+        );
+
+        let res: ApiResponse<CasdoorUser> =
+            reqwest::Client::new().get(url).send().await?.json().await?;
+        res.into_data()
+    }
+
+    pub async fn get_user_by_phone(&self, phone: String) -> anyhow::Result<Option<CasdoorUser>> {
+        let url = format!(
+            "{}/api/get-user?owner={}&clientId={}&clientSecret={}&phone={}",
+            self.config.endpoint,
+            self.config.org_name,
+            self.config.client_id,
+            self.config.client_secret,
+            phone
+        );
+
+        let res: ApiResponse<CasdoorUser> =
+            reqwest::Client::new().get(url).send().await?.json().await?;
+        res.into_data()
+    }
+
+    pub async fn get_user_by_id(&self, user_id: String) -> anyhow::Result<Option<CasdoorUser>> {
+        let url = format!(
+            "{}/api/get-user?owner={}&clientId={}&clientSecret={}&userId={}",
+            self.config.endpoint,
+            self.config.org_name,
+            self.config.client_id,
+            self.config.client_secret,
+            user_id
         );
 
         let res: ApiResponse<CasdoorUser> =
