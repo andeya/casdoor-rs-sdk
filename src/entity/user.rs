@@ -17,11 +17,39 @@ use std::collections::HashMap;
 use super::null_to_default;
 use serde::{Deserialize, Serialize};
 
+#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Userinfo {
+    sub: String,
+    iss: String,
+    aud: String,
+    #[serde(rename = "preferred_username", skip_serializing_if = "Option::is_none")]
+    name: Option<String>,
+    #[serde(rename = "name", skip_serializing_if = "Option::is_none")]
+    display_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    email: Option<String>,
+    #[serde(rename = "email_verified", skip_serializing_if = "Option::is_none")]
+    email_verified: Option<bool>,
+    #[serde(rename = "picture", skip_serializing_if = "Option::is_none")]
+    avatar: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    address: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    phone: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    groups: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    roles: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    permissions: Option<Vec<String>>,
+}
+
 /// User info struct, defined in the SDK.
 #[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", default)]
-pub struct CasdoorUser {
+pub struct User {
     pub access_key: String,
     pub access_secret: String,
     #[serde(deserialize_with = "null_to_default")]

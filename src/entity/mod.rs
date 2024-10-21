@@ -248,8 +248,7 @@ mod tests {
     }
     "#;
 
-        let casdoor_user: CasdoorUser =
-            serde_json::from_str(json_data).expect("JSON parsing failed");
+        let casdoor_user: User = serde_json::from_str(json_data).expect("JSON parsing failed");
         println!("{:?}", casdoor_user);
     }
 }

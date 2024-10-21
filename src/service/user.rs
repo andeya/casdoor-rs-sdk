@@ -17,7 +17,7 @@ use std::fmt::Display;
 use http::Method;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-use crate::entity::{ApiResponse, CasdoorConfig, CasdoorUser};
+use crate::entity::{ApiResponse, CasdoorConfig, User};
 
 /// The filter for query user.
 #[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
@@ -48,7 +48,7 @@ impl Display for QueryUserSet {
 #[serde(rename_all = "camelCase")]
 pub struct ModifyUserArgs {
     action: UserAction,
-    user: CasdoorUser,
+    user: User,
     columns: Vec<String>,
 }
 
@@ -116,7 +116,7 @@ impl<'a> UserService<'a> {
         req.send().await?.json::<ApiResponse<Data, ()>>().await
     }
 
-    pub async fn get_users(&self) -> anyhow::Result<Vec<CasdoorUser>> {
+    pub async fn get_users(&self) -> anyhow::Result<Vec<User>> {
         self.new_request(
             Method::GET,
             format!("/api/get-users?owner={}", self.config.org_name),
@@ -130,7 +130,7 @@ impl<'a> UserService<'a> {
         &self,
         sorter: String,
         limit: i32,
-    ) -> anyhow::Result<Vec<CasdoorUser>> {
+    ) -> anyhow::Result<Vec<User>> {
         self.new_request(
             Method::GET,
             format!(
@@ -156,7 +156,7 @@ impl<'a> UserService<'a> {
         .into_data_default()
     }
 
-    pub async fn get_user(&self, name: String) -> anyhow::Result<Option<CasdoorUser>> {
+    pub async fn get_user(&self, name: String) -> anyhow::Result<Option<User>> {
         self.new_request(
             Method::GET,
             format!("/api/get-user?id={}/{}", self.config.org_name, name),
@@ -166,7 +166,7 @@ impl<'a> UserService<'a> {
         .into_data()
     }
 
-    pub async fn get_user_by_email(&self, email: String) -> anyhow::Result<Option<CasdoorUser>> {
+    pub async fn get_user_by_email(&self, email: String) -> anyhow::Result<Option<User>> {
         self.new_request(
             Method::GET,
             format!(
@@ -179,7 +179,7 @@ impl<'a> UserService<'a> {
         .into_data()
     }
 
-    pub async fn get_user_by_phone(&self, phone: String) -> anyhow::Result<Option<CasdoorUser>> {
+    pub async fn get_user_by_phone(&self, phone: String) -> anyhow::Result<Option<User>> {
         self.new_request(
             Method::GET,
             format!(
@@ -195,7 +195,7 @@ impl<'a> UserService<'a> {
     pub async fn get_user_by_user_id(
         &self,
         user_id: String,
-    ) -> anyhow::Result<Option<CasdoorUser>> {
+    ) -> anyhow::Result<Option<User>> {
         self.new_request(
             Method::GET,
             format!(
@@ -223,7 +223,7 @@ impl<'a> UserService<'a> {
 
     pub async fn add_user(
         &self,
-        user: CasdoorUser,
+        user: User,
         columns: Vec<String>,
     ) -> anyhow::Result<UserOpAction> {
         self.modify_user(ModifyUserArgs {
@@ -236,7 +236,7 @@ impl<'a> UserService<'a> {
 
     pub async fn delete_user(
         &self,
-        user: CasdoorUser,
+        user: User,
         columns: Vec<String>,
     ) -> anyhow::Result<UserOpAction> {
         self.modify_user(ModifyUserArgs {
@@ -249,7 +249,7 @@ impl<'a> UserService<'a> {
 
     pub async fn update_user(
         &self,
-        user: CasdoorUser,
+        user: User,
         columns: Vec<String>,
     ) -> anyhow::Result<UserOpAction> {
         self.modify_user(ModifyUserArgs {
