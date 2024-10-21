@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::entity::{CasdoorConfig, CasdoorUser};
+use crate::entity::{CasdoorConfig, User};
 
 use jsonwebtoken::{Algorithm, DecodingKey, TokenData, Validation};
 use oauth2::basic::{BasicClient, BasicTokenType};
@@ -76,8 +76,8 @@ impl<'a> AuthService<'a> {
         Ok(token_res)
     }
 
-    pub fn parse_jwt_token(&self, token: &str) -> anyhow::Result<CasdoorUser> {
-        let res: TokenData<CasdoorUser> = jsonwebtoken::decode(
+    pub fn parse_jwt_token(&self, token: &str) -> anyhow::Result<User> {
+        let res: TokenData<User> = jsonwebtoken::decode(
             token,
             &DecodingKey::from_rsa_pem(self.config.certificate.as_bytes())?,
             &Validation::new(Algorithm::RS256),

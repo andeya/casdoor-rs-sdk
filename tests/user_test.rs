@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use casdoor_rust_sdk::{CasdoorConfig, CasdoorUser, QueryUserSet, UserService};
+use casdoor_rust_sdk::{CasdoorConfig, QueryUserSet, User, UserService};
 
 fn abs_path(path: &str) -> Result<String, Box<dyn std::error::Error>> {
     let absolute_path = std::env::current_dir()?.join("tests").join(path);
@@ -83,7 +83,7 @@ async fn test_add_user() {
         .unwrap()
         .unwrap_or_default();
 
-    let new_user = CasdoorUser {
+    let new_user = User {
         name: "new_user".to_string(),
         ..user
     };
@@ -102,7 +102,7 @@ async fn test_update_user() {
         .unwrap()
         .unwrap_or_default();
 
-    let new_user = CasdoorUser {
+    let new_user = User {
         email: "change@example.com".to_string(),
         ..user
     };
