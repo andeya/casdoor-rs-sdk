@@ -30,7 +30,8 @@ impl<'a> AuthService<'a> {
         Self { config }
     }
 
-    pub async fn get_auth_token(
+    /// Gets the pivotal and necessary secret to interact with the Casdoor server
+    pub async fn get_oauth_token(
         &self,
         code: String,
     ) -> anyhow::Result<impl TokenResponse<BasicTokenType>> {
@@ -44,11 +45,32 @@ impl<'a> AuthService<'a> {
             "{}/api/login/oauth/access_token",
             self.config.endpoint
         ))?;
-        let code = AuthorizationCode::new(code);
-
         let client = BasicClient::new(client_id, Some(client_secret), auth_url, Some(token_url));
         let token_res = client
-            .exchange_code(code)
+            .exchange_code(AuthorizationCode::new(code))
+            .request_async(async_http_client)
+            .await?;
+        Ok(token_res)
+    }
+
+    /// Refreshes the OAuth token
+    pub async fn refresh_oauth_token(
+        &self,
+        refresh_token: String,
+    ) -> anyhow::Result<impl TokenResponse<BasicTokenType>> {
+        let client_id = ClientId::new(self.config.client_id.clone());
+        let client_secret = ClientSecret::new(self.config.client_secret.clone());
+        let auth_url = AuthUrl::new(format!(
+            "{}/api/login/oauth/authorize",
+            self.config.endpoint
+        ))?;
+        let token_url = TokenUrl::new(format!(
+            "{}/api/login/oauth/refresh_token",
+            self.config.endpoint
+        ))?;
+        let client = BasicClient::new(client_id, Some(client_secret), auth_url, Some(token_url));
+        let token_res = client
+            .exchange_refresh_token(&RefreshToken::new(refresh_token))
             .request_async(async_http_client)
             .await?;
         Ok(token_res)
