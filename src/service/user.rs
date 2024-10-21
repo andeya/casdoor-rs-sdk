@@ -140,7 +140,6 @@ impl<'a> UserService<'a> {
             self.config.client_secret,
             is_online
         );
-        println!("{url}");
         let res: ApiResponse<i64> = reqwest::Client::new().get(url).send().await?.json().await?;
         res.into_data_default()
     }
