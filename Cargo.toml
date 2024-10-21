@@ -25,6 +25,9 @@ toml = "0.5.9"
 serde_derive = "1.0"
 getset2 = "0.2"
 anyhow = "1"
+salvo = { version = "0.73", default-features = false, features = [
+    "oapi",
+], optional = true }
 
 [dev-dependencies]
 iron = "0.6.1"
@@ -32,3 +35,7 @@ router = "0.6.0"
 urlencoding = "2.1.0"
 url = "2.2.2"
 hyper = { version = "0.14.19", features = ["server"] }
+
+[features]
+default = ["salvo"]
+salvo = ["dep:salvo"]

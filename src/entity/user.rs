@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{collections::HashMap, fmt::Display};
+use std::collections::HashMap;
 
 use super::null_to_default;
 use serde::{Deserialize, Serialize};
 
 /// User info struct, defined in the SDK.
+#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", default)]
 pub struct CasdoorUser {
@@ -175,6 +176,7 @@ pub struct CasdoorUser {
     pub zoom: String,
 }
 
+#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", default)]
 pub struct ManagedAccount {
@@ -184,6 +186,7 @@ pub struct ManagedAccount {
     pub username: String,
 }
 
+#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", default)]
 pub struct MultiFactorAuth {
@@ -197,6 +200,7 @@ pub struct MultiFactorAuth {
     pub url: String,
 }
 
+#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Permission {
@@ -228,6 +232,7 @@ pub struct Permission {
     pub users: Vec<String>,
 }
 
+#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Role {
@@ -247,22 +252,7 @@ pub struct Role {
     pub users: Vec<String>,
 }
 
+#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", default)]
 pub struct WebauthnCredential {}
-
-#[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-pub enum UserOpAction {
-    #[default]
-    Affected,
-    Unaffected,
-}
-
-impl Display for UserOpAction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Affected => write!(f, "Affected"),
-            Self::Unaffected => write!(f, "Unaffected"),
-        }
-    }
-}

@@ -14,10 +14,11 @@
 
 use crate::entity::{CasdoorConfig, CasdoorUser};
 
-use jsonwebtoken::{Algorithm, DecodingKey, Validation};
-use oauth2::basic::BasicClient;
+use jsonwebtoken::{Algorithm, DecodingKey, TokenData, Validation};
+use oauth2::basic::{BasicClient, BasicTokenType};
 use oauth2::reqwest::async_http_client;
-use oauth2::{AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenResponse, TokenUrl};
+pub use oauth2::{AccessToken, RefreshToken, Scope, TokenResponse, TokenType};
+use oauth2::{AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenUrl};
 
 pub struct AuthService<'a> {
     config: &'a CasdoorConfig,
@@ -29,7 +30,11 @@ impl<'a> AuthService<'a> {
         Self { config }
     }
 
-    pub async fn get_auth_token(&self, code: String) -> Result<String, Box<dyn std::error::Error>> {
+    /// Gets the pivotal and necessary secret to interact with the Casdoor server
+    pub async fn get_oauth_token(
+        &self,
+        code: String,
+    ) -> anyhow::Result<impl TokenResponse<BasicTokenType>> {
         let client_id = ClientId::new(self.config.client_id.clone());
         let client_secret = ClientSecret::new(self.config.client_secret.clone());
         let auth_url = AuthUrl::new(format!(
@@ -40,27 +45,43 @@ impl<'a> AuthService<'a> {
             "{}/api/login/oauth/access_token",
             self.config.endpoint
         ))?;
-        let code = AuthorizationCode::new(code);
-
         let client = BasicClient::new(client_id, Some(client_secret), auth_url, Some(token_url));
         let token_res = client
-            .exchange_code(code)
+            .exchange_code(AuthorizationCode::new(code))
             .request_async(async_http_client)
             .await?;
-
-        Ok(token_res.access_token().secret().to_string())
+        Ok(token_res)
     }
 
-    pub fn parse_jwt_token(
+    /// Refreshes the OAuth token
+    pub async fn refresh_oauth_token(
         &self,
-        token: String,
-    ) -> Result<CasdoorUser, Box<dyn std::error::Error>> {
-        let res = jsonwebtoken::decode::<CasdoorUser>(
-            &token,
+        refresh_token: String,
+    ) -> anyhow::Result<impl TokenResponse<BasicTokenType>> {
+        let client_id = ClientId::new(self.config.client_id.clone());
+        let client_secret = ClientSecret::new(self.config.client_secret.clone());
+        let auth_url = AuthUrl::new(format!(
+            "{}/api/login/oauth/authorize",
+            self.config.endpoint
+        ))?;
+        let token_url = TokenUrl::new(format!(
+            "{}/api/login/oauth/refresh_token",
+            self.config.endpoint
+        ))?;
+        let client = BasicClient::new(client_id, Some(client_secret), auth_url, Some(token_url));
+        let token_res = client
+            .exchange_refresh_token(&RefreshToken::new(refresh_token))
+            .request_async(async_http_client)
+            .await?;
+        Ok(token_res)
+    }
+
+    pub fn parse_jwt_token(&self, token: &str) -> anyhow::Result<CasdoorUser> {
+        let res: TokenData<CasdoorUser> = jsonwebtoken::decode(
+            token,
             &DecodingKey::from_rsa_pem(self.config.certificate.as_bytes())?,
             &Validation::new(Algorithm::RS256),
         )?;
-
         Ok(res.claims)
     }
 
