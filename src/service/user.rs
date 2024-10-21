@@ -16,22 +16,73 @@ use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
 
-use crate::entity::{ApiResponse, CasdoorConfig, CasdoorUser, UserOpAction};
+use crate::entity::{ApiResponse, CasdoorConfig, CasdoorUser};
 
+/// The filter for query user.
+#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
+#[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum QueryUserSet {
+    /// 0 for offline
+    Offline,
+    /// 1 for online
+    Online,
+    /// empty for all users
+    #[default]
+    #[serde(other)]
+    All,
+}
+impl Display for QueryUserSet {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            QueryUserSet::Offline => write!(f, "0"),
+            QueryUserSet::Online => write!(f, "1"),
+            QueryUserSet::All => write!(f, ""),
+        }
+    }
+}
+
+#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ModifyUserArgs {
+    action: UserAction,
+    user: CasdoorUser,
+    columns: Vec<String>,
+}
+
+#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub enum UserOp {
+pub enum UserAction {
     Add,
     Delete,
     Update,
 }
 
-impl Display for UserOp {
+impl Display for UserAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            UserOp::Add => write!(f, "add-user"),
-            UserOp::Delete => write!(f, "delete-user"),
-            UserOp::Update => write!(f, "update-user"),
+            UserAction::Add => write!(f, "add-user"),
+            UserAction::Delete => write!(f, "delete-user"),
+            UserAction::Update => write!(f, "update-user"),
+        }
+    }
+}
+
+#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
+#[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub enum UserOpAction {
+    #[default]
+    Affected,
+    Unaffected,
+}
+
+impl Display for UserOpAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Affected => write!(f, "Affected"),
+            Self::Unaffected => write!(f, "Unaffected"),
         }
     }
 }
@@ -80,7 +131,7 @@ impl<'a> UserService<'a> {
         res.into_data_default()
     }
 
-    pub async fn get_user_count(&self, is_online: String) -> anyhow::Result<i64> {
+    pub async fn get_user_count(&self, is_online: QueryUserSet) -> anyhow::Result<i64> {
         let url = format!(
             "{}/api/get-user-count?owner={}&clientId={}&clientSecret={}&isOnline={}",
             self.config.endpoint,
@@ -89,7 +140,7 @@ impl<'a> UserService<'a> {
             self.config.client_secret,
             is_online
         );
-
+        println!("{url}");
         let res: ApiResponse<i64> = reqwest::Client::new().get(url).send().await?.json().await?;
         res.into_data_default()
     }
@@ -124,24 +175,23 @@ impl<'a> UserService<'a> {
         res.into_data()
     }
 
-    pub async fn modify_user(
-        &self,
-        op: UserOp,
-        user: &CasdoorUser,
-    ) -> anyhow::Result<UserOpAction> {
-        let url = format!(
+    pub async fn modify_user(&self, args: ModifyUserArgs) -> anyhow::Result<UserOpAction> {
+        let mut url = format!(
             "{}/api/{}?id={}/{}&clientId={}&clientSecret={}",
             self.config.endpoint,
-            op,
-            user.owner,
-            user.name,
+            args.action,
+            args.user.owner,
+            args.user.name,
             self.config.client_id,
             self.config.client_secret
         );
+        if args.columns.len() > 0 {
+            url += &format!("&columns={}", args.columns.join(","));
+        }
 
         let res: ApiResponse<UserOpAction> = reqwest::Client::new()
             .post(url)
-            .json(user)
+            .json(&args.user)
             .send()
             .await?
             .json()
@@ -149,15 +199,42 @@ impl<'a> UserService<'a> {
         res.into_data_default()
     }
 
-    pub async fn add_user(&self, user: &CasdoorUser) -> anyhow::Result<UserOpAction> {
-        self.modify_user(UserOp::Add, user).await
+    pub async fn add_user(
+        &self,
+        user: CasdoorUser,
+        columns: Vec<String>,
+    ) -> anyhow::Result<UserOpAction> {
+        self.modify_user(ModifyUserArgs {
+            action: UserAction::Add,
+            user,
+            columns,
+        })
+        .await
     }
 
-    pub async fn delete_user(&self, user: &CasdoorUser) -> anyhow::Result<UserOpAction> {
-        self.modify_user(UserOp::Delete, user).await
+    pub async fn delete_user(
+        &self,
+        user: CasdoorUser,
+        columns: Vec<String>,
+    ) -> anyhow::Result<UserOpAction> {
+        self.modify_user(ModifyUserArgs {
+            action: UserAction::Delete,
+            user,
+            columns,
+        })
+        .await
     }
 
-    pub async fn update_user(&self, user: &CasdoorUser) -> anyhow::Result<UserOpAction> {
-        self.modify_user(UserOp::Update, user).await
+    pub async fn update_user(
+        &self,
+        user: CasdoorUser,
+        columns: Vec<String>,
+    ) -> anyhow::Result<UserOpAction> {
+        self.modify_user(ModifyUserArgs {
+            action: UserAction::Update,
+            user,
+            columns,
+        })
+        .await
     }
 }

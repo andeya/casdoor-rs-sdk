@@ -14,7 +14,7 @@
 
 use crate::entity::{CasdoorConfig, CasdoorUser};
 
-use jsonwebtoken::{Algorithm, DecodingKey, Validation};
+use jsonwebtoken::{Algorithm, DecodingKey, TokenData, Validation};
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
 use oauth2::{AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenResponse, TokenUrl};
@@ -29,7 +29,7 @@ impl<'a> AuthService<'a> {
         Self { config }
     }
 
-    pub async fn get_auth_token(&self, code: String) -> Result<String, Box<dyn std::error::Error>> {
+    pub async fn get_auth_token(&self, code: String) -> anyhow::Result<String> {
         let client_id = ClientId::new(self.config.client_id.clone());
         let client_secret = ClientSecret::new(self.config.client_secret.clone());
         let auth_url = AuthUrl::new(format!(
@@ -46,21 +46,19 @@ impl<'a> AuthService<'a> {
         let token_res = client
             .exchange_code(code)
             .request_async(async_http_client)
-            .await?;
-
-        Ok(token_res.access_token().secret().to_string())
+            .await?
+            .access_token()
+            .secret()
+            .to_string();
+        Ok(token_res)
     }
 
-    pub fn parse_jwt_token(
-        &self,
-        token: String,
-    ) -> Result<CasdoorUser, Box<dyn std::error::Error>> {
-        let res = jsonwebtoken::decode::<CasdoorUser>(
+    pub fn parse_jwt_token(&self, token: String) -> anyhow::Result<CasdoorUser> {
+        let res: TokenData<CasdoorUser> = jsonwebtoken::decode(
             &token,
             &DecodingKey::from_rsa_pem(self.config.certificate.as_bytes())?,
             &Validation::new(Algorithm::RS256),
         )?;
-
         Ok(res.claims)
     }
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use casdoor_rust_sdk::{CasdoorConfig, CasdoorUser, UserService};
+use casdoor_rust_sdk::{CasdoorConfig, CasdoorUser, QueryUserSet, UserService};
 
 fn abs_path(path: &str) -> Result<String, Box<dyn std::error::Error>> {
     let absolute_path = std::env::current_dir()?.join("tests").join(path);
@@ -42,7 +42,10 @@ async fn test_get_sorted_users() {
 async fn test_get_user_count() {
     let conf = CasdoorConfig::from_toml(abs_path("./conf.toml").unwrap().as_str()).unwrap();
     let user_service = UserService::new(&conf);
-    let count = user_service.get_user_count("0".to_string()).await.unwrap();
+    let count = user_service
+        .get_user_count(QueryUserSet::Offline)
+        .await
+        .unwrap();
     assert!(count == 1);
 }
 
@@ -85,7 +88,7 @@ async fn test_add_user() {
         ..user
     };
 
-    let res = user_service.add_user(&new_user).await.unwrap();
+    let res = user_service.add_user(new_user, vec![]).await.unwrap();
     println!("{res:?}");
 }
 
@@ -104,7 +107,7 @@ async fn test_update_user() {
         ..user
     };
 
-    let res = user_service.update_user(&new_user).await.unwrap();
+    let res = user_service.update_user(new_user, vec![]).await.unwrap();
     println!("{res:?}");
 }
 
@@ -118,6 +121,6 @@ async fn test_delete_user() {
         .unwrap()
         .unwrap_or_default();
 
-    let res = user_service.delete_user(&user).await.unwrap();
+    let res = user_service.delete_user(user, vec![]).await.unwrap();
     println!("{res:?}");
 }
