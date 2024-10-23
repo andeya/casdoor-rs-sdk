@@ -1,14 +1,16 @@
-//! A [Casdoor](https://github.com/casdoor/casdoor) SDK with more complete interfaces and better usability.
+//! A [Casdoor](https://github.com/casdoor/casdoor) SDK (contain APIs) with more complete interfaces and better usability.
 
 mod authn;
 mod config;
-mod service;
+mod sdk;
 mod user;
 pub mod utils;
 
 pub use authn::*;
+#[cfg(feature = "api")]
+pub use casdoor_api::{apis, models as api_models};
 pub use config::*;
-pub use service::*;
+pub use sdk::*;
 pub use user::*;
 
 #[cfg(test)]
@@ -53,8 +55,8 @@ nCCJHBcAyFnm1hdvdwEdH33jDBjNB6ciotJZrf/3VYaIWSalADosHAgMWfXuWP+h
         let org_name = "built-in";
         let app_name = "myapp";
 
-        let service = Config::new(endpoint, client_id, client_secret, certificate, org_name, Some(app_name.to_owned())).into_service();
-        println!("{:?}", service.authn());
-        println!("{:?}", service.user());
+        let sdk = Config::new(endpoint, client_id, client_secret, certificate, org_name, Some(app_name.to_owned())).into_sdk();
+        println!("{:?}", sdk.authn());
+        println!("{:?}", sdk.user());
     }
 }

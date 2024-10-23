@@ -1,6 +1,6 @@
 # casdoor-rs-sdk
 
-A [Casdoor](https://github.com/casdoor/casdoor) SDK with more complete interfaces and better usability.
+A [Casdoor](https://github.com/casdoor/casdoor) SDK (contain APIs) with more complete interfaces and better usability.
 
 [![GitHub last commit](https://img.shields.io/github/last-commit/andeya/casdoor-rs-sdk)](https://github.com/andeya/casdoor-rs-sdk/commits/main)
 [![Crates.io](https://img.shields.io/crates/v/casdoor-rs-sdk.svg)](https://crates.io/crates/casdoor-rs-sdk)
@@ -26,7 +26,7 @@ casdoor-rs-sdk = "2"
 #[cfg(test)]
 mod tests {
     use casdoor_rs_sdk::*;
-    
+
     #[test]
     fn example() {
         let endpoint = "http://localhost:8000";
@@ -66,9 +66,9 @@ nCCJHBcAyFnm1hdvdwEdH33jDBjNB6ciotJZrf/3VYaIWSalADosHAgMWfXuWP+h
         let org_name = "built-in";
         let app_name = "myapp";
 
-        let service = Config::new(endpoint, client_id, client_secret, certificate, org_name, Some(app_name.to_owned())).into_service();
-        println!("{:?}", service.authn());
-        println!("{:?}", service.user());
+        let sdk = Config::new(endpoint, client_id, client_secret, certificate, org_name, Some(app_name.to_owned())).into_sdk();
+        println!("{:?}", sdk.authn());
+        println!("{:?}", sdk.user());
     }
 }
 ```

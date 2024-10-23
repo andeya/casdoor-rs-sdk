@@ -3,20 +3,20 @@ mod types;
 use http::Method;
 pub use types::*;
 
-use crate::{Service, NONE_BODY};
+use crate::{Sdk, NONE_BODY};
 
-impl Service {
-    pub fn user(&self) -> UserService {
-        UserService { service: self.clone() }
+impl Sdk {
+    pub fn user(&self) -> UserSdk {
+        UserSdk { service: self.clone() }
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct UserService {
-    service: Service,
+pub struct UserSdk {
+    service: Sdk,
 }
 
-impl UserService {
+impl UserSdk {
     pub async fn get_users(&self) -> anyhow::Result<Vec<User>> {
         self.service
             .request_data(Method::GET, format!("/api/get-users?owner={}", self.service.org_name()), NONE_BODY)

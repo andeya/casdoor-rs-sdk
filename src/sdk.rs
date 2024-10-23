@@ -10,10 +10,10 @@ use serde::{
 use crate::Config;
 
 #[derive(Debug, Clone)]
-pub struct Service {
+pub struct Sdk {
     config: Arc<Config>,
 }
-impl Deref for Service {
+impl Deref for Sdk {
     type Target = Config;
 
     fn deref(&self) -> &Self::Target {
@@ -22,14 +22,14 @@ impl Deref for Service {
 }
 
 impl Config {
-    pub fn into_service(self) -> Service {
-        Service::new(self)
+    pub fn into_sdk(self) -> Sdk {
+        Sdk::new(self)
     }
 }
 
 pub const NONE_BODY: Option<&()> = None::<&()>;
 
-impl Service {
+impl Sdk {
     pub fn new(config: Config) -> Self {
         Self { config: Arc::new(config) }
     }

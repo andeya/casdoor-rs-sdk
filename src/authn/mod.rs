@@ -8,20 +8,20 @@ use oauth2::{
 pub use oauth2::{AccessToken, RefreshToken, Scope, TokenResponse, TokenType};
 pub use types::*;
 
-use crate::Service;
+use crate::Sdk;
 
-impl Service {
-    pub fn authn(&self) -> AuthService {
-        AuthService { service: self.clone() }
+impl Sdk {
+    pub fn authn(&self) -> AuthSdk {
+        AuthSdk { service: self.clone() }
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct AuthService {
-    service: Service,
+pub struct AuthSdk {
+    service: Sdk,
 }
 
-impl AuthService {
+impl AuthSdk {
     fn client_id(&self) -> ClientId {
         ClientId::new(self.service.client_id().clone())
     }
