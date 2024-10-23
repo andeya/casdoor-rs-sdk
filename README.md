@@ -11,11 +11,11 @@ A [Casdoor](https://github.com/casdoor/casdoor) SDK with more complete interface
 Run the following Cargo command in your project directory:
 
 ```sh
-cargo add dipper
+cargo add casdoor-rs-sdk
 ```
 
 Or add the following line to your Cargo.toml:
 
 ```toml
-casdoor-rs-sdk = "0.2"
+casdoor-rs-sdk = "2"
 ```
