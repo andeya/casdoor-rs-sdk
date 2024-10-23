@@ -1,21 +1,8 @@
-// Copyright 2022 The Casdoor Authors. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+use std::{collections::HashMap, fmt::Display};
 
-use std::collections::HashMap;
-
-use super::null_to_default;
 use serde::{Deserialize, Serialize};
+
+use crate::utils::null_to_default;
 
 #[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
 #[derive(Serialize, Deserialize, Debug)]
@@ -284,3 +271,72 @@ pub struct Role {
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", default)]
 pub struct WebauthnCredential {}
+
+/// The filter for query user.
+#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
+#[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum QueryUserSet {
+    /// 0 for offline
+    Offline,
+    /// 1 for online
+    Online,
+    /// empty for all users
+    #[default]
+    #[serde(other)]
+    All,
+}
+impl Display for QueryUserSet {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            QueryUserSet::Offline => write!(f, "0"),
+            QueryUserSet::Online => write!(f, "1"),
+            QueryUserSet::All => write!(f, ""),
+        }
+    }
+}
+
+#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ModifyUserArgs {
+    pub action: UserAction,
+    pub user: User,
+    pub columns: Vec<String>,
+}
+
+#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum UserAction {
+    Add,
+    Delete,
+    Update,
+}
+
+impl Display for UserAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            UserAction::Add => write!(f, "add-user"),
+            UserAction::Delete => write!(f, "delete-user"),
+            UserAction::Update => write!(f, "update-user"),
+        }
+    }
+}
+
+#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
+#[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub enum UserOpAction {
+    #[default]
+    Affected,
+    Unaffected,
+}
+
+impl Display for UserOpAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Affected => write!(f, "Affected"),
+            Self::Unaffected => write!(f, "Unaffected"),
+        }
+    }
+}

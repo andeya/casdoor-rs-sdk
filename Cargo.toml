@@ -1,40 +1,34 @@
 [package]
-name = "casdoor-rust-sdk"
-version = "1.3.0"
+name = "casdoor-rs-sdk"
+version = "2.0.0"
 edition = "2021"
 license = "Apache-2.0"
-description = "Rust client SDK for Casdoor"
-repository = "https://github.com/casdoor/casdoor-rust-sdk"
+description = "A Casdoor SDK with more complete interfaces and better usability."
+repository = "https://github.com/andeya/casdoor-rs-sdk"
+documentation = "https://docs.rs/casdoor-rs-sdk"
 readme = "README.md"
 homepage = "https://casdoor.org"
 keywords = ["iam", "auth", "sso", "oidc", "casdoor"]
-
+authors = ["Andeya Lee <andeyalee@outlook.com>"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-serde = { version = "1.0", features = ["derive"] }
-reqwest = { version = "0.11", features = ["json"] }
+serde = { version = "1", features = ["derive"] }
+reqwest = { version = "0.12", features = ["json"] }
 tokio = { version = "1", features = ["full"] }
 serde_json = "1.0"
-jsonwebtoken = "8"
-http = "0.2"
+jsonwebtoken = "9.3"
+http = "1.1"
 urlencoding = "2.1.0"
 oauth2 = "4.1"
-toml = "0.5.9"
-serde_derive = "1.0"
+toml = "0.8"
 getset2 = "0.2"
 anyhow = "1"
 salvo = { version = "0.73", default-features = false, features = [
     "oapi",
 ], optional = true }
 
-[dev-dependencies]
-iron = "0.6.1"
-router = "0.6.0"
-urlencoding = "2.1.0"
-url = "2.2.2"
-hyper = { version = "0.14.19", features = ["server"] }
 
 [features]
 default = ["salvo"]

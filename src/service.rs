@@ -1,33 +1,69 @@
-// Copyright 2022 The Casdoor Authors. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+use std::{ops::Deref, sync::Arc};
 
-mod config;
-mod user;
+use http::Method;
+use serde::{
+    de::{DeserializeOwned, Deserializer},
+    ser::{SerializeStruct, Serializer},
+    Deserialize, Serialize,
+};
 
-pub use crate::entity::config::*;
-pub use crate::entity::user::*;
-use serde::de::Deserializer;
-use serde::ser::SerializeStruct;
-use serde::ser::Serializer;
-use serde::{Deserialize, Serialize};
+use crate::Config;
 
-pub fn null_to_default<'de, D, T>(deserializer: D) -> Result<T, D::Error>
-where
-    D: Deserializer<'de>,
-    T: Deserialize<'de> + Default,
-{
-    Ok(Option::deserialize(deserializer)?.unwrap_or_default())
+#[derive(Debug, Clone)]
+pub struct Service {
+    config: Arc<Config>,
+}
+impl Deref for Service {
+    type Target = Config;
+
+    fn deref(&self) -> &Self::Target {
+        &self.config
+    }
+}
+
+pub const NONE_BODY: Option<&()> = None::<&()>;
+
+impl Service {
+    pub async fn request<Data, Data2>(
+        &self,
+        method: Method,
+        url_path: impl AsRef<str>,
+        body: Option<&impl Serialize>,
+    ) -> reqwest::Result<ApiResponse<Data, Data2>>
+    where
+        Data: DeserializeOwned + Default,
+        Data2: DeserializeOwned + Default,
+    {
+        let mut req = reqwest::Client::new()
+            .request(method, self.config.endpoint().clone() + url_path.as_ref())
+            .basic_auth(self.config.client_id().clone(), Some(self.config.client_secret().clone()));
+        if let Some(body) = body {
+            req = req.json(body);
+        }
+        req.send().await?.json::<ApiResponse<Data, Data2>>().await
+    }
+    pub async fn request_data<Data>(
+        &self,
+        method: Method,
+        url_path: impl AsRef<str>,
+        body: Option<&impl Serialize>,
+    ) -> reqwest::Result<ApiResponse<Data, ()>>
+    where
+        Data: DeserializeOwned + Default,
+    {
+        self.request::<Data, ()>(method, url_path, body).await
+    }
+    pub async fn request_data2<Data2>(
+        &self,
+        method: Method,
+        url_path: impl AsRef<str>,
+        body: Option<&impl Serialize>,
+    ) -> reqwest::Result<ApiResponse<(), Data2>>
+    where
+        Data2: DeserializeOwned + Default,
+    {
+        self.request::<(), Data2>(method, url_path, body).await
+    }
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -105,9 +141,7 @@ impl<Data, Data2> ApiResponse<Data, Data2> {
         match self.status {
             Status::Ok(_) => Ok((self.data, self.data2)),
             Status::Err(e) => Err(anyhow::anyhow!(e)),
-            Status::Other { status, msg } => {
-                Err(anyhow::anyhow!("Unknown: status={status}, msg={msg}"))
-            }
+            Status::Other { status, msg } => Err(anyhow::anyhow!("Unknown: status={status}, msg={msg}")),
         }
     }
 
@@ -166,89 +200,9 @@ mod tests {
     #[test]
     fn test_res_json() {
         let json_data = r#"{"data":{"accessKey":"test"},"data2":null,"name":"","status":"ok","msg":"test","sub":""}"#;
-        let obj: ApiResponse<HashMap<String, String>, ()> =
-            serde_json::from_str(&json_data).unwrap();
+        let obj: ApiResponse<HashMap<String, String>, ()> = serde_json::from_str(&json_data).unwrap();
         println!("{obj:?}");
         let json_data2 = serde_json::to_string(&obj).unwrap();
         assert_eq!(json_data, json_data2);
-    }
-
-    #[test]
-    fn test_user_json() {
-        let json_data = r#"
-    {
-        "owner": "example_owner",
-        "name": "example_name",
-        "createdTime": "2022-01-01T00:00:00Z",
-        "updatedTime": "2022-01-01T00:00:00Z",
-        
-        "id": "example_id",
-        "type": "example_type",
-        "password": "example_password",
-        "passwordSalt": "example_salt",
-        "passwordType": "example_type",
-        "displayName": "Example User",
-        "firstName": "First",
-        "lastName": "Last",
-        "avatar": "example_avatar",
-        "avatarType": "example_type",
-        "permanentAvatar": "example_perm_avatar",
-        "email": "example@example.com",
-        "emailVerified": true,
-        "phone": "123456789",
-        "countryCode": "example_cc",
-        "region": "example_region",
-        "location": "Example Location",
-        "address": ["Example Address"],
-        "affiliation": "example_affiliation",
-        "title": "example_title",
-        "idCardType": "example_card_type",
-        "idCard": "example_card",
-        "homepage": "https://example.com",
-        "bio": "Example bio",
-        "tag": "example_tag",
-        "language": "en",
-        "gender": "M",
-        "birthday": "1990-01-01",
-        "education": "example_education",
-        "score": 100,
-        "karma": 10,
-        "ranking": 1,
-        "isDefaultAvatar": true,
-        "isOnline": true,
-        "isAdmin": true,
-        "isForbidden": false,
-        "isDeleted": false,
-        "signupApplication": "example_signup_app",
-        "hash": "example_hash",
-        "preHash": "example_pre_hash",
-        
-        "github": "example_github",
-        "google": "example_google",
-        "qq": "example_qq",
-        "wechat": "example_wechat",
-        "facebook": "example_facebook",
-        "dingtalk": "example_dingtalk",
-        "weibo": "example_weibo",
-        "gitee": "example_gitee",
-        "linkedin": "example_linkedin",
-        "wecom": "example_wecom",
-        "lark": "example_lark",
-        "gitlab": "example_gitlab",
-        "ldap": "example_ldap",
-
-        "properties": {
-            "additionalProp1": "value1",
-            "additionalProp2": "value2",
-            "additionalProp3": "value3"
-        },
-        "groups": ["ExampleGroup"],
-        "lastSigninWrongTime": "2022-01-01T00:00:00Z",
-        "signinWrongTimes": 0
-    }
-    "#;
-
-        let casdoor_user: User = serde_json::from_str(json_data).expect("JSON parsing failed");
-        println!("{:?}", casdoor_user);
     }
 }
