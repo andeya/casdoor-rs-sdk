@@ -21,9 +21,18 @@ impl Deref for Service {
     }
 }
 
+impl Config {
+    pub fn into_service(self) -> Service {
+        Service::new(self)
+    }
+}
+
 pub const NONE_BODY: Option<&()> = None::<&()>;
 
 impl Service {
+    pub fn new(config: Config) -> Self {
+        Self { config: Arc::new(config) }
+    }
     pub async fn request<Data, Data2>(
         &self,
         method: Method,

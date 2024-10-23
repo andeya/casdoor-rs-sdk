@@ -62,18 +62,11 @@ impl AuthService {
     }
 
     pub fn parse_jwt_token(&self, token: &str) -> anyhow::Result<Claims> {
-        let v: TokenData<serde_json::Value> = jsonwebtoken::decode(
-            token,
-            &DecodingKey::from_rsa_pem(self.service.certificate().as_bytes())?,
-            &Validation::new(Algorithm::RS256),
-        )?;
-        println!("parse_jwt_token = {}", v.claims);
-        let res: TokenData<Claims> = jsonwebtoken::decode(
-            token,
-            &DecodingKey::from_rsa_pem(self.service.certificate().as_bytes())?,
-            &Validation::new(Algorithm::RS256),
-        )?;
-        Ok(res.claims)
+        let mut validation = Validation::new(Algorithm::RS256);
+        validation.set_audience(&[self.service.client_id()]);
+
+        let td: TokenData<Claims> = jsonwebtoken::decode(token, &DecodingKey::from_rsa_pem(self.service.certificate().as_bytes())?, &validation)?;
+        Ok(td.claims)
     }
 
     pub fn get_signin_url(&self, redirect_url: String) -> String {

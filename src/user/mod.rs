@@ -11,6 +11,7 @@ impl Service {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct UserService {
     service: Service,
 }

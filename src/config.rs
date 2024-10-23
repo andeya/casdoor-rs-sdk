@@ -23,13 +23,20 @@ pub struct Config {
 
 impl Config {
     /// Create a new Config.
-    pub fn new(endpoint: String, client_id: String, client_secret: String, certificate: String, org_name: String, app_name: Option<String>) -> Self {
+    pub fn new(
+        endpoint: impl Into<String>,
+        client_id: impl Into<String>,
+        client_secret: impl Into<String>,
+        certificate: impl Into<String>,
+        org_name: impl Into<String>,
+        app_name: Option<String>,
+    ) -> Self {
         Config {
-            endpoint,
-            client_id,
-            client_secret,
-            certificate: Self::replace_cert_to_pub_key(certificate),
-            org_name,
+            endpoint: endpoint.into(),
+            client_id: client_id.into(),
+            client_secret: client_secret.into(),
+            certificate: Self::replace_cert_to_pub_key(certificate.into()),
+            org_name: org_name.into(),
             app_name,
         }
     }
