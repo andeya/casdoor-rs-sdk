@@ -1,11 +1,7 @@
 mod types;
 use jsonwebtoken::{Algorithm, DecodingKey, TokenData, Validation};
-use oauth2::{
-    basic::{BasicClient, BasicTokenType},
-    reqwest::async_http_client,
-    AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenUrl,
-};
-pub use oauth2::{AccessToken, RefreshToken, Scope, TokenResponse, TokenType};
+use oauth2::{basic::BasicClient, reqwest::async_http_client, AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenUrl};
+pub use oauth2::{basic::BasicTokenType, AccessToken, RefreshToken, Scope, TokenResponse, TokenType};
 pub use types::*;
 
 use crate::Sdk;
