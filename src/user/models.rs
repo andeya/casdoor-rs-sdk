@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt::Display};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{utils::null_to_default, Model, QueryArgs};
+use crate::{utils::null_to_default, Model};
 
 #[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
 #[derive(Serialize, Deserialize, Debug)]
@@ -314,13 +314,48 @@ impl Display for QueryUserSet {
     }
 }
 
-#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
+#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToParameters, salvo::prelude::ToSchema))]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct UserQueryArgs {
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
     #[serde(rename = "groupName", skip_serializing_if = "Option::is_none")]
     pub group_name: Option<String>,
-    #[serde(flatten)]
-    pub base: QueryArgs,
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[serde(rename = "pageSize", skip_serializing_if = "Option::is_none")]
+    pub page_size: Option<i32>,
+    /// page
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[serde(rename = "p", skip_serializing_if = "Option::is_none")]
+    pub page: Option<i32>,
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[serde(rename = "field", skip_serializing_if = "Option::is_none")]
+    pub field: Option<String>,
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[serde(rename = "value", skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[serde(rename = "sortField", skip_serializing_if = "Option::is_none")]
+    pub sort_field: Option<String>,
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[serde(rename = "sortOrder", skip_serializing_if = "Option::is_none")]
+    pub sort_order: Option<String>,
+}
+
+#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToParameters, salvo::prelude::ToSchema))]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GetUserArgs {
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub phone: Option<String>,
 }
 
 #[cfg(test)]
@@ -332,8 +367,8 @@ mod tests {
         let query_part = serde_urlencoded::to_string(&args).unwrap();
         assert_eq!("", query_part);
 
-        args.base.page = Some(0);
-        args.base.page_size = Some(1);
+        args.page = Some(0);
+        args.page_size = Some(1);
         let query_part = serde_urlencoded::to_string(&args).unwrap();
         assert_eq!("pageSize=1&p=0", query_part);
     }

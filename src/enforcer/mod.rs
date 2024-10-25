@@ -3,7 +3,7 @@ mod models;
 use http::Method;
 pub use models::*;
 
-use crate::{QueryArgs, Sdk, NONE_BODY};
+use crate::{QueryArgs, Sdk, SdkResult, NONE_BODY};
 
 impl Sdk {
     pub fn enforcer(&self) -> EnforcerSdk {
@@ -17,13 +17,13 @@ pub struct EnforcerSdk {
 }
 
 impl EnforcerSdk {
-    pub async fn get_enforcer(&self, name: String) -> anyhow::Result<Option<Enforcer>> {
+    pub async fn get_enforcer(&self, name: String) -> SdkResult<Option<Enforcer>> {
         self.sdk
             .request_data(Method::GET, format!("/api/get-enforcer?id={}", self.sdk.id(&name)), NONE_BODY)
             .await?
             .into_data()
     }
-    pub async fn get_enforcers(&self, query_args: QueryArgs) -> anyhow::Result<Vec<Enforcer>> {
+    pub async fn get_enforcers(&self, query_args: QueryArgs) -> SdkResult<Vec<Enforcer>> {
         self.sdk
             .request_data(
                 Method::GET,
@@ -33,7 +33,7 @@ impl EnforcerSdk {
             .await?
             .into_data_default()
     }
-    pub async fn enforce(&self, args: EnforceArgs) -> anyhow::Result<bool> {
+    pub async fn enforce(&self, args: EnforceArgs) -> SdkResult<bool> {
         let allow_list = self
             .sdk
             .request::<Vec<bool>, Vec<String>>(
@@ -45,7 +45,7 @@ impl EnforcerSdk {
             .into_data_default()?;
         Ok(allow_list.contains(&true))
     }
-    pub async fn batch_enforce(&self, args: BatchEnforceArgs) -> anyhow::Result<Vec<bool>> {
+    pub async fn batch_enforce(&self, args: BatchEnforceArgs) -> SdkResult<Vec<bool>> {
         let allow_lists = self
             .sdk
             .request::<Vec<Vec<bool>>, Vec<String>>(

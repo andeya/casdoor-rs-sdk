@@ -6,14 +6,16 @@ mod enforcer;
 mod sdk;
 mod user;
 pub mod utils;
-
 pub use authn::*;
 #[cfg(feature = "api")]
 pub use casdoor_api::{apis, models as api_models};
 pub use config::*;
 pub use enforcer::*;
+pub use reqwest::{StatusCode, Url};
 pub use sdk::*;
 pub use user::*;
+
+pub type SdkResult<T> = std::result::Result<T, SdkError>;
 
 #[cfg(test)]
 mod tests {

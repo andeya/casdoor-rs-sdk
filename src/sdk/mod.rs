@@ -1,7 +1,9 @@
+mod errors;
 mod models;
 use std::{ops::Deref, sync::Arc};
 
-use http::Method;
+pub use errors::*;
+use http::{Method, StatusCode};
 pub use models::*;
 use serde::{
     de::{DeserializeOwned, Deserializer},
@@ -9,7 +11,7 @@ use serde::{
     Deserialize, Serialize,
 };
 
-use crate::Config;
+use crate::{Config, SdkResult};
 
 #[derive(Debug, Clone)]
 pub struct Sdk {
@@ -43,7 +45,7 @@ impl Sdk {
         method: Method,
         url_path: impl AsRef<str>,
         body: Option<&impl Serialize>,
-    ) -> reqwest::Result<ApiResponse<Data, Data2>>
+    ) -> SdkResult<ApiResponse<Data, Data2>>
     where
         Data: DeserializeOwned + Default,
         Data2: DeserializeOwned + Default,
@@ -54,14 +56,14 @@ impl Sdk {
         if let Some(body) = body {
             req = req.json(body);
         }
-        req.send().await?.json::<ApiResponse<Data, Data2>>().await
+        Ok(req.send().await?.json::<ApiResponse<Data, Data2>>().await?)
     }
     pub async fn request_data<Data>(
         &self,
         method: Method,
         url_path: impl AsRef<str>,
         body: Option<&impl Serialize>,
-    ) -> reqwest::Result<ApiResponse<Data, ()>>
+    ) -> SdkResult<ApiResponse<Data, ()>>
     where
         Data: DeserializeOwned + Default,
     {
@@ -72,13 +74,13 @@ impl Sdk {
         method: Method,
         url_path: impl AsRef<str>,
         body: Option<&impl Serialize>,
-    ) -> reqwest::Result<ApiResponse<(), Data2>>
+    ) -> SdkResult<ApiResponse<(), Data2>>
     where
         Data2: DeserializeOwned + Default,
     {
         self.request::<(), Data2>(method, url_path, body).await
     }
-    pub async fn modify_model<T: Model>(&self, args: ModelModifyArgs<T>) -> anyhow::Result<bool> {
+    pub async fn modify_model<T: Model>(&self, args: ModelModifyArgs<T>) -> SdkResult<bool> {
         let mut url_path = format!("/api/{}-{}?id={}", args.action, T::ident(), args.model.id());
         if matches!(args.action, ModelAction::Update) && args.columns.is_some() {
             let columns = args.columns.unwrap();
@@ -91,7 +93,7 @@ impl Sdk {
             .into_data_default()
             .map(|v| v.is_affected())
     }
-    pub async fn add_model<T: Model>(&self, args: ModelAddArgs<T>) -> anyhow::Result<bool> {
+    pub async fn add_model<T: Model>(&self, args: ModelAddArgs<T>) -> SdkResult<bool> {
         self.modify_model(ModelModifyArgs {
             action: ModelAction::Add,
             model: args.model,
@@ -99,7 +101,7 @@ impl Sdk {
         })
         .await
     }
-    pub async fn update_model<T: Model>(&self, args: ModelUpdateArgs<T>) -> anyhow::Result<bool> {
+    pub async fn update_model<T: Model>(&self, args: ModelUpdateArgs<T>) -> SdkResult<bool> {
         self.modify_model(ModelModifyArgs {
             action: ModelAction::Update,
             model: args.model,
@@ -107,7 +109,7 @@ impl Sdk {
         })
         .await
     }
-    pub async fn delete_model<T: Model>(&self, args: ModelDeleteArgs<T>) -> anyhow::Result<bool> {
+    pub async fn delete_model<T: Model>(&self, args: ModelDeleteArgs<T>) -> SdkResult<bool> {
         self.modify_model(ModelModifyArgs {
             action: ModelAction::Delete,
             model: args.model,
@@ -115,7 +117,7 @@ impl Sdk {
         })
         .await
     }
-    pub(crate) fn get_url_query_part(&self, query_args: impl Serialize) -> anyhow::Result<String> {
+    pub(crate) fn get_url_query_part(&self, query_args: impl Serialize) -> SdkResult<String> {
         let mut query = format!("owner={}", self.org_name());
         let query_args = serde_urlencoded::to_string(query_args)?;
         if !query_args.is_empty() {
@@ -196,15 +198,18 @@ impl Serialize for Status {
 }
 
 impl<Data, Data2> ApiResponse<Data, Data2> {
-    pub fn into_result(self) -> anyhow::Result<(Option<Data>, Option<Data2>)> {
+    pub fn into_result(self) -> SdkResult<(Option<Data>, Option<Data2>)> {
         match self.status {
             Status::Ok(_) => Ok((self.data, self.data2)),
-            Status::Err(e) => Err(anyhow::anyhow!(e)),
-            Status::Other { status, msg } => Err(anyhow::anyhow!("Unknown: status={status}, msg={msg}")),
+            Status::Err(e) => Err(SdkError::new(StatusCode::INTERNAL_SERVER_ERROR, e)),
+            Status::Other { status, msg } => Err(SdkError::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Unknown: status={status}, msg={msg}"),
+            )),
         }
     }
 
-    pub fn into_result_default(self) -> anyhow::Result<(Data, Data2)>
+    pub fn into_result_default(self) -> SdkResult<(Data, Data2)>
     where
         Data: Default,
         Data2: Default,
@@ -213,17 +218,17 @@ impl<Data, Data2> ApiResponse<Data, Data2> {
         Ok((data.unwrap_or_default(), data2.unwrap_or_default()))
     }
 
-    pub fn into_data(self) -> anyhow::Result<Option<Data>> {
+    pub fn into_data(self) -> SdkResult<Option<Data>> {
         let (data, _) = self.into_result()?;
         Ok(data)
     }
 
-    pub fn into_data_value(self) -> anyhow::Result<Data> {
+    pub fn into_data_value(self) -> SdkResult<Data> {
         let (data, _) = self.into_result()?;
-        data.ok_or(anyhow::anyhow!("Unexpected empty data."))
+        data.ok_or(SdkError::new(StatusCode::NOT_FOUND, "Unexpected empty data."))
     }
 
-    pub fn into_data_default(self) -> anyhow::Result<Data>
+    pub fn into_data_default(self) -> SdkResult<Data>
     where
         Data: Default,
     {
@@ -231,17 +236,17 @@ impl<Data, Data2> ApiResponse<Data, Data2> {
         Ok(data.unwrap_or_default())
     }
 
-    pub fn into_data2(self) -> anyhow::Result<Option<Data2>> {
+    pub fn into_data2(self) -> SdkResult<Option<Data2>> {
         let (_, data2) = self.into_result()?;
         Ok(data2)
     }
 
-    pub fn into_data2_value(self) -> anyhow::Result<Data2> {
+    pub fn into_data2_value(self) -> SdkResult<Data2> {
         let (_, data2) = self.into_result()?;
-        data2.ok_or(anyhow::anyhow!("Unexpected empty data2."))
+        data2.ok_or(SdkError::new(StatusCode::NOT_FOUND, "Unexpected empty data2."))
     }
 
-    pub fn into_data2_default(self) -> anyhow::Result<Data2>
+    pub fn into_data2_default(self) -> SdkResult<Data2>
     where
         Data2: Default,
     {
