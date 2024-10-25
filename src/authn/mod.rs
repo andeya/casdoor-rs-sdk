@@ -4,7 +4,7 @@ pub use models::*;
 use oauth2::{basic::BasicClient, reqwest::async_http_client, AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenUrl};
 pub use oauth2::{basic::BasicTokenType, AccessToken, RefreshToken, Scope, TokenResponse, TokenType};
 
-use crate::{Oauth2RequestTokenStandardBasicError, Sdk, SdkResult, SdkSourceError};
+use crate::{Sdk, SdkResult};
 
 impl Sdk {
     pub fn authn(&self) -> AuthSdk {
@@ -46,7 +46,7 @@ impl AuthSdk {
 
     /// Refreshes the OAuth token
     pub async fn refresh_oauth_token(&self, refresh_token: String) -> SdkResult<impl TokenResponse<BasicTokenType>> {
-        let r = BasicClient::new(
+        Ok(BasicClient::new(
             self.client_id(),
             self.client_secret(),
             self.auth_url("/api/login/oauth/authorize")?,
@@ -54,9 +54,7 @@ impl AuthSdk {
         )
         .exchange_refresh_token(&RefreshToken::new(refresh_token))
         .request_async(async_http_client)
-        .await
-        .map_err(|e| SdkSourceError::Oauth2RequestTokenError(e))?;
-        Ok(r)
+        .await?)
     }
 
     pub fn parse_jwt_token(&self, token: &str) -> SdkResult<Claims> {

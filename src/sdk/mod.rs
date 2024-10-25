@@ -201,8 +201,8 @@ impl<Data, Data2> ApiResponse<Data, Data2> {
     pub fn into_result(self) -> SdkResult<(Option<Data>, Option<Data2>)> {
         match self.status {
             Status::Ok(_) => Ok((self.data, self.data2)),
-            Status::Err(e) => Err(SdkError::from_str(StatusCode::INTERNAL_SERVER_ERROR, e)),
-            Status::Other { status, msg } => Err(SdkError::from_str(
+            Status::Err(e) => Err(SdkError::new(StatusCode::INTERNAL_SERVER_ERROR, e)),
+            Status::Other { status, msg } => Err(SdkError::new(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 format!("Unknown: status={status}, msg={msg}"),
             )),
@@ -225,7 +225,7 @@ impl<Data, Data2> ApiResponse<Data, Data2> {
 
     pub fn into_data_value(self) -> SdkResult<Data> {
         let (data, _) = self.into_result()?;
-        data.ok_or(SdkError::from_str(StatusCode::NOT_FOUND, "Unexpected empty data."))
+        data.ok_or(SdkError::new(StatusCode::NOT_FOUND, "Unexpected empty data."))
     }
 
     pub fn into_data_default(self) -> SdkResult<Data>
@@ -243,7 +243,7 @@ impl<Data, Data2> ApiResponse<Data, Data2> {
 
     pub fn into_data2_value(self) -> SdkResult<Data2> {
         let (_, data2) = self.into_result()?;
-        data2.ok_or(SdkError::from_str(StatusCode::NOT_FOUND, "Unexpected empty data2."))
+        data2.ok_or(SdkError::new(StatusCode::NOT_FOUND, "Unexpected empty data2."))
     }
 
     pub fn into_data2_default(self) -> SdkResult<Data2>

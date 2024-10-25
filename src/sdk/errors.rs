@@ -6,18 +6,12 @@ use crate::StatusCode;
 #[non_exhaustive]
 pub struct SdkError {
     pub code: StatusCode,
-    pub inner: SdkSourceError,
+    pub inner: SdkInnerError,
 }
 
 impl SdkError {
-    pub fn new(code: StatusCode, inner: impl Into<SdkSourceError>) -> Self {
+    pub fn new(code: StatusCode, inner: impl Into<SdkInnerError>) -> Self {
         Self { code, inner: inner.into() }
-    }
-    pub fn from_str(code: StatusCode, source: impl Into<String>) -> Self {
-        Self {
-            code,
-            inner: SdkSourceError::StringError(StringError(source.into())),
-        }
     }
 }
 
@@ -30,40 +24,27 @@ impl Display for SdkError {
 impl std::error::Error for SdkError {}
 
 #[derive(Debug)]
-pub enum SdkSourceError {
-    StringError(StringError),
+pub enum SdkInnerError {
+    StringError(String),
     ReqwestError(reqwest::Error),
     SerdeUrlencodedSerError(serde_urlencoded::ser::Error),
     Oauth2UrlParseError(oauth2::url::ParseError),
-    Oauth2RequestTokenError(Oauth2RequestTokenStandardBasicError),
+    Oauth2RequestTokenError(String),
     JwtError(jsonwebtoken::errors::Error),
 }
 
-impl Display for SdkSourceError {
+impl Display for SdkInnerError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                SdkSourceError::StringError(string_error) => string_error.0.to_owned(),
-                SdkSourceError::ReqwestError(error) => error.to_string(),
-                SdkSourceError::SerdeUrlencodedSerError(error) => error.to_string(),
-                SdkSourceError::Oauth2UrlParseError(parse_error) => parse_error.to_string(),
-                SdkSourceError::Oauth2RequestTokenError(request_token_error) => request_token_error.to_string(),
-                SdkSourceError::JwtError(error) => error.to_string(),
-            }
-        )
+        match self {
+            SdkInnerError::StringError(error) => write!(f, "{error}"),
+            SdkInnerError::ReqwestError(error) => write!(f, "{error}"),
+            SdkInnerError::SerdeUrlencodedSerError(error) => write!(f, "{error}"),
+            SdkInnerError::Oauth2UrlParseError(error) => write!(f, "{error}"),
+            SdkInnerError::Oauth2RequestTokenError(error) => write!(f, "{error}"),
+            SdkInnerError::JwtError(error) => write!(f, "{error}"),
+        }
     }
 }
-
-#[derive(Debug)]
-pub struct StringError(pub String);
-impl Display for StringError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-impl std::error::Error for StringError {}
 
 impl From<reqwest::Error> for SdkError {
     fn from(e: reqwest::Error) -> Self {
@@ -77,59 +58,49 @@ impl From<reqwest::Error> for SdkError {
             } else {
                 StatusCode::INTERNAL_SERVER_ERROR
             },
-            inner: Box::new(e),
+            inner: SdkInnerError::ReqwestError(e),
         }
+    }
+}
+
+impl<T: Into<String>> From<T> for SdkInnerError {
+    fn from(value: T) -> Self {
+        Self::StringError(value.into())
     }
 }
 
 impl From<serde_urlencoded::ser::Error> for SdkError {
     fn from(value: serde_urlencoded::ser::Error) -> Self {
-        Self::new(StatusCode::BAD_REQUEST, SdkSourceError::SerdeUrlencodedSerError(value))
+        Self::new(StatusCode::BAD_REQUEST, SdkInnerError::SerdeUrlencodedSerError(value))
     }
 }
 
 impl From<oauth2::url::ParseError> for SdkError {
     fn from(value: oauth2::url::ParseError) -> Self {
-        Self::new(StatusCode::BAD_REQUEST, SdkSourceError::Oauth2UrlParseError(value))
+        Self::new(StatusCode::BAD_REQUEST, SdkInnerError::Oauth2UrlParseError(value))
     }
 }
 
 impl From<jsonwebtoken::errors::Error> for SdkError {
     fn from(value: jsonwebtoken::errors::Error) -> Self {
-        Self::new(StatusCode::BAD_REQUEST, SdkSourceError::JwtError(value))
+        Self::new(StatusCode::BAD_REQUEST, SdkInnerError::JwtError(value))
     }
 }
 
-pub type Oauth2RequestTokenStandardBasicError =
-    oauth2::RequestTokenError<oauth2::reqwest::Error<oauth2::reqwest::Error>, oauth2::StandardErrorResponse<oauth2::basic::BasicErrorResponseType>>;
-
-impl From<Oauth2RequestTokenStandardBasicError> for SdkError {
-    fn from(value: Oauth2RequestTokenStandardBasicError) -> Self {
+impl<RE, TE> From<oauth2::RequestTokenError<RE, TE>> for SdkError
+where
+    RE: std::error::Error + 'static,
+    TE: oauth2::ErrorResponse + 'static,
+{
+    fn from(value: oauth2::RequestTokenError<RE, TE>) -> Self {
         match value {
-            oauth2::RequestTokenError::ServerResponse(_) => {
-                Self::new(StatusCode::INTERNAL_SERVER_ERROR, SdkSourceError::Oauth2RequestTokenError(value))
-            }
-            oauth2::RequestTokenError::Request(_) => Self::new(StatusCode::BAD_REQUEST, SdkSourceError::Oauth2RequestTokenError(value)),
-            oauth2::RequestTokenError::Parse(_, _) => Self::new(StatusCode::INTERNAL_SERVER_ERROR, SdkSourceError::Oauth2RequestTokenError(value)),
-            oauth2::RequestTokenError::Other(_) => Self::new(StatusCode::INTERNAL_SERVER_ERROR, SdkSourceError::Oauth2RequestTokenError(value)),
+            oauth2::RequestTokenError::ServerResponse(_) => Self::new(StatusCode::INTERNAL_SERVER_ERROR, value.to_string()),
+            oauth2::RequestTokenError::Request(_) => Self::new(StatusCode::BAD_REQUEST, value.to_string()),
+            oauth2::RequestTokenError::Parse(_, _) => Self::new(StatusCode::INTERNAL_SERVER_ERROR, value.to_string()),
+            oauth2::RequestTokenError::Other(_) => Self::new(StatusCode::INTERNAL_SERVER_ERROR, value.to_string()),
         }
     }
 }
-
-// impl<RE, TE> From<oauth2::RequestTokenError<RE, TE>> for SdkError
-// where
-//     RE: std::error::Error + 'static,
-//     TE: oauth2::ErrorResponse + 'static,
-// {
-//     fn from(value: oauth2::RequestTokenError<RE, TE>) -> Self {
-//         match value {
-//             oauth2::RequestTokenError::ServerResponse(_) => Self::new(StatusCode::INTERNAL_SERVER_ERROR, value),
-//             oauth2::RequestTokenError::Request(_) => Self::new(StatusCode::BAD_REQUEST, value),
-//             oauth2::RequestTokenError::Parse(_, _) => Self::new(StatusCode::INTERNAL_SERVER_ERROR, value),
-//             oauth2::RequestTokenError::Other(_) => Self::new(StatusCode::INTERNAL_SERVER_ERROR, value),
-//         }
-//     }
-// }
 
 #[cfg(feature = "salvo")]
 impl SdkError {
