@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt::Display};
 
 use serde::{Deserialize, Serialize};
 
-use crate::utils::null_to_default;
+use crate::{utils::null_to_default, Model, QueryArgs};
 
 #[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
 #[derive(Serialize, Deserialize, Debug)]
@@ -191,6 +191,24 @@ pub struct User {
     pub zoom: String,
 }
 
+impl Model for User {
+    fn ident() -> &'static str {
+        "user"
+    }
+
+    fn owner(&self) -> &str {
+        &self.owner
+    }
+
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn support_update_columns() -> bool {
+        true
+    }
+}
+
 #[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", default)]
@@ -297,46 +315,104 @@ impl Display for QueryUserSet {
 }
 
 #[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct ModifyUserArgs {
-    pub action: UserAction,
-    pub user: User,
-    pub columns: Vec<String>,
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct UserQueryArgs {
+    #[serde(rename = "groupName", skip_serializing_if = "Option::is_none")]
+    pub group_name: Option<String>,
+    #[serde(flatten)]
+    pub base: QueryArgs,
 }
 
-#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub enum UserAction {
-    Add,
-    Delete,
-    Update,
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_user_query_args() {
+        let mut args = UserQueryArgs::default();
+        let query_part = serde_urlencoded::to_string(&args).unwrap();
+        assert_eq!("", query_part);
 
-impl Display for UserAction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            UserAction::Add => write!(f, "add-user"),
-            UserAction::Delete => write!(f, "delete-user"),
-            UserAction::Update => write!(f, "update-user"),
-        }
+        args.base.page = Some(0);
+        args.base.page_size = Some(1);
+        let query_part = serde_urlencoded::to_string(&args).unwrap();
+        assert_eq!("pageSize=1&p=0", query_part);
     }
-}
+    #[test]
+    fn test_user() {
+        let json_data = r#"
+    {
+        "owner": "example_owner",
+        "name": "example_name",
+        "createdTime": "2022-01-01T00:00:00Z",
+        "updatedTime": "2022-01-01T00:00:00Z",
+        
+        "id": "example_id",
+        "type": "example_type",
+        "password": "example_password",
+        "passwordSalt": "example_salt",
+        "passwordType": "example_type",
+        "displayName": "Example User",
+        "firstName": "First",
+        "lastName": "Last",
+        "avatar": "example_avatar",
+        "avatarType": "example_type",
+        "permanentAvatar": "example_perm_avatar",
+        "email": "example@example.com",
+        "emailVerified": true,
+        "phone": "123456789",
+        "countryCode": "example_cc",
+        "region": "example_region",
+        "location": "Example Location",
+        "address": ["Example Address"],
+        "affiliation": "example_affiliation",
+        "title": "example_title",
+        "idCardType": "example_card_type",
+        "idCard": "example_card",
+        "homepage": "https://example.com",
+        "bio": "Example bio",
+        "tag": "example_tag",
+        "language": "en",
+        "gender": "M",
+        "birthday": "1990-01-01",
+        "education": "example_education",
+        "score": 100,
+        "karma": 10,
+        "ranking": 1,
+        "isDefaultAvatar": true,
+        "isOnline": true,
+        "isAdmin": true,
+        "isForbidden": false,
+        "isDeleted": false,
+        "signupApplication": "example_signup_app",
+        "hash": "example_hash",
+        "preHash": "example_pre_hash",
+        
+        "github": "example_github",
+        "google": "example_google",
+        "qq": "example_qq",
+        "wechat": "example_wechat",
+        "facebook": "example_facebook",
+        "dingtalk": "example_dingtalk",
+        "weibo": "example_weibo",
+        "gitee": "example_gitee",
+        "linkedin": "example_linkedin",
+        "wecom": "example_wecom",
+        "lark": "example_lark",
+        "gitlab": "example_gitlab",
+        "ldap": "example_ldap",
 
-#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
-#[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-pub enum UserOpAction {
-    #[default]
-    Affected,
-    Unaffected,
-}
+        "properties": {
+            "additionalProp1": "value1",
+            "additionalProp2": "value2",
+            "additionalProp3": "value3"
+        },
+        "groups": ["ExampleGroup"],
+        "lastSigninWrongTime": "2022-01-01T00:00:00Z",
+        "signinWrongTimes": 0
+    }
+    "#;
 
-impl Display for UserOpAction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Affected => write!(f, "Affected"),
-            Self::Unaffected => write!(f, "Unaffected"),
-        }
+        let casdoor_user: User = serde_json::from_str(json_data).expect("JSON parsing failed");
+        println!("{:?}", casdoor_user);
     }
 }

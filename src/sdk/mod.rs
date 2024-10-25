@@ -1,6 +1,8 @@
+mod models;
 use std::{ops::Deref, sync::Arc};
 
 use http::Method;
+pub use models::*;
 use serde::{
     de::{DeserializeOwned, Deserializer},
     ser::{SerializeStruct, Serializer},
@@ -32,6 +34,9 @@ pub const NONE_BODY: Option<&()> = None::<&()>;
 impl Sdk {
     pub fn new(config: Config) -> Self {
         Self { config: Arc::new(config) }
+    }
+    pub fn id(&self, name: &str) -> String {
+        format!("{}/{}", self.org_name(), name)
     }
     pub async fn request<Data, Data2>(
         &self,
@@ -72,6 +77,51 @@ impl Sdk {
         Data2: DeserializeOwned + Default,
     {
         self.request::<(), Data2>(method, url_path, body).await
+    }
+    pub async fn modify_model<T: Model>(&self, args: ModelModifyArgs<T>) -> anyhow::Result<bool> {
+        let mut url_path = format!("/api/{}-{}?id={}", args.action, T::ident(), args.model.id());
+        if matches!(args.action, ModelAction::Update) && args.columns.is_some() {
+            let columns = args.columns.unwrap();
+            if !columns.is_empty() {
+                url_path += &format!("&columns={}", columns.join(","));
+            }
+        }
+        self.request_data::<ModelActionAffect>(Method::POST, url_path, Some(&args.model))
+            .await?
+            .into_data_default()
+            .map(|v| v.is_affected())
+    }
+    pub async fn add_model<T: Model>(&self, args: ModelAddArgs<T>) -> anyhow::Result<bool> {
+        self.modify_model(ModelModifyArgs {
+            action: ModelAction::Add,
+            model: args.model,
+            columns: None,
+        })
+        .await
+    }
+    pub async fn update_model<T: Model>(&self, args: ModelUpdateArgs<T>) -> anyhow::Result<bool> {
+        self.modify_model(ModelModifyArgs {
+            action: ModelAction::Update,
+            model: args.model,
+            columns: Some(args.columns),
+        })
+        .await
+    }
+    pub async fn delete_model<T: Model>(&self, args: ModelDeleteArgs<T>) -> anyhow::Result<bool> {
+        self.modify_model(ModelModifyArgs {
+            action: ModelAction::Delete,
+            model: args.model,
+            columns: None,
+        })
+        .await
+    }
+    pub(crate) fn get_url_query_part(&self, query_args: impl Serialize) -> anyhow::Result<String> {
+        let mut query = format!("owner={}", self.org_name());
+        let query_args = serde_urlencoded::to_string(query_args)?;
+        if !query_args.is_empty() {
+            query = format!("{query}&{}", self.org_name())
+        }
+        Ok(query)
     }
 }
 

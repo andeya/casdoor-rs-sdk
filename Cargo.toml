@@ -1,6 +1,6 @@
 [package]
 name = "casdoor-rs-sdk"
-version = "2.0.3"
+version = "2.1.0"
 edition = "2021"
 license = "Apache-2.0"
 description = "A Casdoor SDK (contain APIs) with more complete interfaces and better usability."
@@ -15,9 +15,10 @@ authors = ["Andeya Lee <andeyalee@outlook.com>"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
+serde_json = "1.0"
+serde_urlencoded = "0.7"
 reqwest = { version = "0.12", features = ["json"] }
 tokio = { version = "1", features = ["full"] }
-serde_json = "1.0"
 jsonwebtoken = "9.3.0"
 http = "1.1"
 urlencoding = "2.1"
@@ -32,6 +33,6 @@ jwt-claims = "1.0.1"
 casdoor-api = { package = "casdoor-sdk", version = "2.0.4", optional = true }
 
 [features]
-default = ["api"]
+default = ["api", "salvo"]
 salvo = ["dep:salvo", "jwt-claims/salvo"]
 api = ["dep:casdoor-api"]

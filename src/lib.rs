@@ -2,6 +2,7 @@
 
 mod authn;
 mod config;
+mod enforcer;
 mod sdk;
 mod user;
 pub mod utils;
@@ -10,6 +11,7 @@ pub use authn::*;
 #[cfg(feature = "api")]
 pub use casdoor_api::{apis, models as api_models};
 pub use config::*;
+pub use enforcer::*;
 pub use sdk::*;
 pub use user::*;
 
