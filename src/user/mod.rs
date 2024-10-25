@@ -45,7 +45,7 @@ impl UserSdk {
             (None, Some(name), None, None) => self.get_user_by_name(name).await,
             (None, None, Some(email), None) => self.get_user_by_email(email).await,
             (None, None, None, Some(phone)) => self.get_user_by_phone(phone).await,
-            _ => Err(SdkError::new(
+            _ => Err(SdkError::from_str(
                 StatusCode::BAD_REQUEST,
                 r##"The parameters "uid", "name", "email" and "phone" can and must only pass one."##,
             )),
