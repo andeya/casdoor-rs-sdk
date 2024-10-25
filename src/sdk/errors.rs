@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::StatusCode;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -15,6 +17,14 @@ impl SdkError {
         }
     }
 }
+
+impl Display for SdkError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl std::error::Error for SdkError {}
 
 impl From<reqwest::Error> for SdkError {
     fn from(e: reqwest::Error) -> Self {
@@ -36,6 +46,33 @@ impl From<reqwest::Error> for SdkError {
 impl From<serde_urlencoded::ser::Error> for SdkError {
     fn from(value: serde_urlencoded::ser::Error) -> Self {
         Self::new(StatusCode::BAD_REQUEST, value.to_string())
+    }
+}
+
+impl From<oauth2::url::ParseError> for SdkError {
+    fn from(value: oauth2::url::ParseError) -> Self {
+        Self::new(StatusCode::BAD_REQUEST, value.to_string())
+    }
+}
+
+impl From<jsonwebtoken::errors::Error> for SdkError {
+    fn from(value: jsonwebtoken::errors::Error) -> Self {
+        Self::new(StatusCode::BAD_REQUEST, value.to_string())
+    }
+}
+
+impl<RE, TE> From<oauth2::RequestTokenError<RE, TE>> for SdkError
+where
+    RE: std::error::Error + 'static,
+    TE: oauth2::ErrorResponse + 'static,
+{
+    fn from(value: oauth2::RequestTokenError<RE, TE>) -> Self {
+        match value {
+            oauth2::RequestTokenError::ServerResponse(_) => Self::new(StatusCode::INTERNAL_SERVER_ERROR, value.to_string()),
+            oauth2::RequestTokenError::Request(_) => Self::new(StatusCode::BAD_REQUEST, value.to_string()),
+            oauth2::RequestTokenError::Parse(_, _) => Self::new(StatusCode::INTERNAL_SERVER_ERROR, value.to_string()),
+            oauth2::RequestTokenError::Other(_) => Self::new(StatusCode::INTERNAL_SERVER_ERROR, value.to_string()),
+        }
     }
 }
 

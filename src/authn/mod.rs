@@ -4,7 +4,7 @@ pub use models::*;
 use oauth2::{basic::BasicClient, reqwest::async_http_client, AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenUrl};
 pub use oauth2::{basic::BasicTokenType, AccessToken, RefreshToken, Scope, TokenResponse, TokenType};
 
-use crate::Sdk;
+use crate::{Sdk, SdkResult};
 
 impl Sdk {
     pub fn authn(&self) -> AuthSdk {
@@ -32,7 +32,7 @@ impl AuthSdk {
     }
 
     /// Gets the pivotal and necessary secret to interact with the Casdoor server
-    pub async fn get_oauth_token(&self, code: String) -> anyhow::Result<impl TokenResponse<BasicTokenType>> {
+    pub async fn get_oauth_token(&self, code: String) -> SdkResult<impl TokenResponse<BasicTokenType>> {
         Ok(BasicClient::new(
             self.client_id(),
             self.client_secret(),
@@ -45,7 +45,7 @@ impl AuthSdk {
     }
 
     /// Refreshes the OAuth token
-    pub async fn refresh_oauth_token(&self, refresh_token: String) -> anyhow::Result<impl TokenResponse<BasicTokenType>> {
+    pub async fn refresh_oauth_token(&self, refresh_token: String) -> SdkResult<impl TokenResponse<BasicTokenType>> {
         Ok(BasicClient::new(
             self.client_id(),
             self.client_secret(),
@@ -57,7 +57,7 @@ impl AuthSdk {
         .await?)
     }
 
-    pub fn parse_jwt_token(&self, token: &str) -> anyhow::Result<Claims> {
+    pub fn parse_jwt_token(&self, token: &str) -> SdkResult<Claims> {
         let mut validation = Validation::new(Algorithm::RS256);
         validation.set_audience(&[self.sdk.client_id()]);
 
