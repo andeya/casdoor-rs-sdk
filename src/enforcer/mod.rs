@@ -6,39 +6,25 @@ pub use models::*;
 use crate::{QueryArgs, Sdk, SdkResult, NONE_BODY};
 
 impl Sdk {
-    pub fn enforcer(&self) -> EnforcerSdk {
-        EnforcerSdk { sdk: self.clone() }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct EnforcerSdk {
-    sdk: Sdk,
-}
-
-impl EnforcerSdk {
     pub async fn get_enforcer(&self, name: String) -> SdkResult<Option<Enforcer>> {
-        self.sdk
-            .request_data(Method::GET, format!("/api/get-enforcer?id={}", self.sdk.id(&name)), NONE_BODY)
+        self.request_data(Method::GET, format!("/api/get-enforcer?id={}", self.id(&name)), NONE_BODY)
             .await?
             .into_data()
     }
     pub async fn get_enforcers(&self, query_args: QueryArgs) -> SdkResult<Vec<Enforcer>> {
-        self.sdk
-            .request_data(
-                Method::GET,
-                format!("/api/get-enforcers?{}", self.sdk.get_url_query_part(query_args)?),
-                NONE_BODY,
-            )
-            .await?
-            .into_data_default()
+        self.request_data(
+            Method::GET,
+            format!("/api/get-enforcers?{}", self.get_url_query_part(query_args)?),
+            NONE_BODY,
+        )
+        .await?
+        .into_data_default()
     }
     pub async fn enforce(&self, args: EnforceArgs) -> SdkResult<bool> {
         let allow_list = self
-            .sdk
             .request::<Vec<bool>, Vec<String>>(
                 Method::POST,
-                format!("/api/enforce?{}", self.sdk.get_url_query_part(args.query)?),
+                format!("/api/enforce?{}", self.get_url_query_part(args.query)?),
                 Some(&args.casbin_request),
             )
             .await?
@@ -47,10 +33,9 @@ impl EnforcerSdk {
     }
     pub async fn batch_enforce(&self, args: BatchEnforceArgs) -> SdkResult<Vec<bool>> {
         let allow_lists = self
-            .sdk
             .request::<Vec<Vec<bool>>, Vec<String>>(
                 Method::POST,
-                format!("/api/batch-enforce?{}", self.sdk.get_url_query_part(args.query)?),
+                format!("/api/batch-enforce?{}", self.get_url_query_part(args.query)?),
                 Some(&args.casbin_requests),
             )
             .await?

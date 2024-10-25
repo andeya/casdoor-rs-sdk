@@ -60,7 +60,7 @@ nCCJHBcAyFnm1hdvdwEdH33jDBjNB6ciotJZrf/3VYaIWSalADosHAgMWfXuWP+h
         let app_name = "myapp";
 
         let sdk = Config::new(endpoint, client_id, client_secret, certificate, org_name, Some(app_name.to_owned())).into_sdk();
+        println!("{:?}", sdk);
         println!("{:?}", sdk.authn());
-        println!("{:?}", sdk.user());
     }
 }
