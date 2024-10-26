@@ -1,13 +1,12 @@
 mod models;
 
-use http::{Method, StatusCode};
 pub use models::*;
 
-use crate::{Sdk, SdkError, SdkResult, NONE_BODY};
+use crate::{Method, Sdk, SdkError, SdkResult, StatusCode, NONE_BODY};
 
 impl Sdk {
     pub async fn get_users(&self, query_args: UserQueryArgs) -> SdkResult<Vec<User>> {
-        self.request_data(Method::GET, format!("/api/get-users?{}", self.get_url_query_part(query_args)?), NONE_BODY)
+        self.request_data(Method::GET, self.get_url_path("get-users", true, query_args)?, NONE_BODY)
             .await?
             .into_data_default()
     }
@@ -15,7 +14,7 @@ impl Sdk {
     pub async fn get_user_count(&self, is_online: QueryUserSet) -> SdkResult<i64> {
         self.request_data(
             Method::GET,
-            format!("/api/get-user-count?owner={}&isOnline={}", self.org_name(), is_online),
+            self.get_url_path("get-user-count", true, &[("isOnline", is_online.to_string())])?,
             NONE_BODY,
         )
         .await?

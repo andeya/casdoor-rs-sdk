@@ -3,7 +3,6 @@ mod models;
 use std::{ops::Deref, sync::Arc};
 
 pub use errors::*;
-use http::{Method, StatusCode};
 pub use models::*;
 use serde::{
     de::{DeserializeOwned, Deserializer},
@@ -11,7 +10,7 @@ use serde::{
     Deserialize, Serialize,
 };
 
-use crate::{Config, SdkResult};
+use crate::{Config, Method, SdkResult, StatusCode};
 
 #[derive(Debug, Clone)]
 pub struct Sdk {
@@ -50,8 +49,10 @@ impl Sdk {
         Data: DeserializeOwned + Default,
         Data2: DeserializeOwned + Default,
     {
+        let url = self.config.endpoint().clone() + url_path.as_ref();
+        println!("{url}");
         let mut req = reqwest::Client::new()
-            .request(method, self.config.endpoint().clone() + url_path.as_ref())
+            .request(method, url)
             .basic_auth(self.config.client_id().clone(), Some(self.config.client_secret().clone()));
         if let Some(body) = body {
             req = req.json(body);
@@ -117,11 +118,18 @@ impl Sdk {
         })
         .await
     }
-    pub(crate) fn get_url_query_part(&self, query_args: impl Serialize) -> SdkResult<String> {
-        let mut query = format!("owner={}", self.org_name());
+    pub(crate) fn get_url_path(&self, ident: impl Into<String>, add_owner_query: bool, query_args: impl Serialize) -> SdkResult<String> {
+        Ok(format!("/api/{}?{}", ident.into(), self.get_url_query_part(add_owner_query, query_args)?))
+    }
+    pub(crate) fn get_url_query_part(&self, add_owner_query: bool, query_args: impl Serialize) -> SdkResult<String> {
+        let mut query = if add_owner_query {
+            format!("owner={}", self.org_name())
+        } else {
+            String::new()
+        };
         let query_args = serde_urlencoded::to_string(query_args)?;
         if !query_args.is_empty() {
-            query = format!("{query}&{}", self.org_name())
+            query = format!("{query}&{query_args}")
         }
         Ok(query)
     }
@@ -268,5 +276,16 @@ mod tests {
         println!("{obj:?}");
         let json_data2 = serde_json::to_string(&obj).unwrap();
         assert_eq!(json_data, json_data2);
+    }
+    #[test]
+    fn test_query_url() {
+        let query = serde_urlencoded::to_string(vec![
+            ("bread", "ba/guette".to_owned()),
+            ("cheese", "comté".to_owned()),
+            ("meat", "ham".to_owned()),
+            ("fat", "butter".to_owned()),
+        ])
+        .unwrap();
+        assert_eq!("bread=ba%2Fguette&cheese=comt%C3%A9&meat=ham&fat=butter", query);
     }
 }
