@@ -4,7 +4,7 @@ pub use models::*;
 use oauth2::{basic::BasicClient, reqwest::async_http_client, AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenUrl};
 pub use oauth2::{basic::BasicTokenType, AccessToken, RefreshToken, Scope, TokenResponse, TokenType};
 
-use crate::{Method, Sdk, SdkResult, NONE_BODY};
+use crate::{Method, QueryArgs, Sdk, SdkResult, NONE_BODY};
 impl Sdk {
     pub fn authn(&self) -> AuthSdk {
         AuthSdk { sdk: self.clone() }
@@ -99,9 +99,9 @@ impl AuthSdk {
         format!("{}/account{}", self.sdk.endpoint(), param)
     }
 
-    pub async fn get_sessions(&self) -> SdkResult<Vec<Session>> {
+    pub async fn get_sessions(&self, query_args: QueryArgs) -> SdkResult<Vec<Session>> {
         self.sdk
-            .request_data(Method::GET, self.sdk.get_url_path("get-sessions", true, ())?, NONE_BODY)
+            .request_data(Method::GET, self.sdk.get_url_path("get-sessions", true, query_args)?, NONE_BODY)
             .await?
             .into_data_default()
     }
