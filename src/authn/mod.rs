@@ -4,8 +4,7 @@ pub use models::*;
 use oauth2::{basic::BasicClient, reqwest::async_http_client, AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenUrl};
 pub use oauth2::{basic::BasicTokenType, AccessToken, RefreshToken, Scope, TokenResponse, TokenType};
 
-use crate::{Sdk, SdkResult};
-
+use crate::{Method, Sdk, SdkResult, NONE_BODY};
 impl Sdk {
     pub fn authn(&self) -> AuthSdk {
         AuthSdk { sdk: self.clone() }
@@ -98,5 +97,38 @@ impl AuthSdk {
             _ => "".to_string(),
         };
         format!("{}/account{}", self.sdk.endpoint(), param)
+    }
+
+    pub async fn get_sessions(&self) -> SdkResult<Vec<Session>> {
+        self.sdk
+            .request_data(Method::GET, self.sdk.get_url_path("get-sessions", true, ())?, NONE_BODY)
+            .await?
+            .into_data_default()
+    }
+
+    pub async fn get_session(&self, session_pk_id: &str) -> SdkResult<Session> {
+        self.sdk
+            .request_data(
+                Method::GET,
+                self.sdk.get_url_path("get-session", true, ("sessionPkId", session_pk_id))?,
+                NONE_BODY,
+            )
+            .await?
+            .into_data_default()
+    }
+
+    pub async fn is_session_duplicated(&self, session_pk_id: &str, session_id: &str) -> SdkResult<bool> {
+        self.sdk
+            .request_data(
+                Method::GET,
+                self.sdk.get_url_path(
+                    "is-session-duplicated",
+                    true,
+                    &[("sessionPkId", session_pk_id), ("sessionId", session_id)],
+                )?,
+                NONE_BODY,
+            )
+            .await?
+            .into_data_default()
     }
 }

@@ -287,5 +287,6 @@ mod tests {
         ])
         .unwrap();
         assert_eq!("bread=ba%2Fguette&cheese=comt%C3%A9&meat=ham&fat=butter", query);
+        assert_eq!("", serde_urlencoded::to_string(()).unwrap());
     }
 }
