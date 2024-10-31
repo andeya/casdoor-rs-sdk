@@ -121,11 +121,8 @@ impl AuthSdk {
         self.sdk
             .request_data(
                 Method::GET,
-                self.sdk.get_url_path(
-                    "is-session-duplicated",
-                    true,
-                    &[("sessionPkId", session_pk_id), ("sessionId", session_id)],
-                )?,
+                self.sdk
+                    .get_url_path("is-session-duplicated", true, [("sessionPkId", session_pk_id), ("sessionId", session_id)])?,
                 NONE_BODY,
             )
             .await?
