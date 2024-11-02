@@ -1,5 +1,8 @@
 //! A [Casdoor](https://github.com/casdoor/casdoor) SDK (contain APIs) with more complete interfaces and better usability.
 
+#![allow(stable_features)]
+#![feature(const_mut_refs, const_refs_to_static)]
+
 mod application;
 mod authn;
 mod authz;
