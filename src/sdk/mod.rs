@@ -2,6 +2,7 @@ mod errors;
 mod models;
 use std::{ops::Deref, sync::Arc};
 
+use cubix::MaybeString;
 pub use errors::*;
 pub use models::*;
 use serde::{
@@ -46,8 +47,8 @@ impl Sdk {
         body: Option<&impl Serialize>,
     ) -> SdkResult<ApiResponse<Data, Data2>>
     where
-        Data: DeserializeOwned + Default,
-        Data2: DeserializeOwned + Default,
+        Data: DeserializeOwned,
+        Data2: DeserializeOwned,
     {
         let url = self.config.endpoint().clone() + url_path.as_ref();
         println!("{url}");
@@ -66,7 +67,7 @@ impl Sdk {
         body: Option<&impl Serialize>,
     ) -> SdkResult<ApiResponse<Data, ()>>
     where
-        Data: DeserializeOwned + Default,
+        Data: DeserializeOwned,
     {
         self.request::<Data, ()>(method, url_path, body).await
     }
@@ -77,11 +78,12 @@ impl Sdk {
         body: Option<&impl Serialize>,
     ) -> SdkResult<ApiResponse<(), Data2>>
     where
-        Data2: DeserializeOwned + Default,
+        Data2: DeserializeOwned,
     {
         self.request::<(), Data2>(method, url_path, body).await
     }
     pub async fn modify_model<T: Model>(&self, args: ModelModifyArgs<T>) -> SdkResult<bool> {
+        // When adding model, the id parameter is not needed.
         let mut url_path = format!("/api/{}-{}?id={}", args.action, T::ident(), args.model.id());
         if matches!(args.action, ModelAction::Update) && args.columns.is_some() {
             let columns = args.columns.unwrap();
@@ -118,6 +120,29 @@ impl Sdk {
         })
         .await
     }
+    pub(crate) async fn get_model_by_name<M: Model>(&self, name: String) -> Result<Option<M>, SdkError> {
+        self.request_data(Method::GET, format!("/api/get-{}?id={}", M::ident(), self.id(&name)), NONE_BODY)
+            .await?
+            .into_data()
+    }
+    pub async fn get_default_model<M: Model>(&self, name: String) -> Result<Option<M>, SdkError> {
+        self.request_data(Method::GET, format!("/api/get-default-{}?id={}", M::ident(), self.id(&name)), NONE_BODY)
+            .await?
+            .into_data()
+    }
+    // Query and return some models and the total number of models.
+    pub(crate) async fn get_models<M: Model>(&self, mid_ident: impl Into<MaybeString>, query_args: impl IsQueryArgs) -> SdkResult<QueryResult<M>> {
+        let ident = if let Some(mid) = mid_ident.into().option_string() {
+            "get-".to_owned() + &mid + "-"
+        } else {
+            "get-".to_owned()
+        } + M::plural_ident();
+
+        self.request(Method::GET, self.get_url_path(ident, true, query_args)?, NONE_BODY)
+            .await?
+            .into_result_default()
+            .map(Into::into)
+    }
     pub(crate) fn get_url_path(&self, ident: impl Into<String>, add_owner_query: bool, query_args: impl Serialize) -> SdkResult<String> {
         Ok(format!("/api/{}?{}", ident.into(), self.get_url_query_part(add_owner_query, query_args)?))
     }
@@ -135,7 +160,7 @@ impl Sdk {
     }
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct ApiResponse<Data, Data2 = ()> {
     pub data: Option<Data>,
@@ -144,6 +169,18 @@ pub struct ApiResponse<Data, Data2 = ()> {
     #[serde(flatten)]
     pub status: Status,
     pub sub: String,
+}
+
+impl<Data, Data2> Default for ApiResponse<Data, Data2> {
+    fn default() -> Self {
+        Self {
+            data: Default::default(),
+            data2: Default::default(),
+            name: Default::default(),
+            status: Default::default(),
+            sub: Default::default(),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -279,7 +316,7 @@ mod tests {
     }
     #[test]
     fn test_query_url() {
-        let query = serde_urlencoded::to_string(vec![
+        let query = serde_urlencoded::to_string([
             ("bread", "ba/guette".to_owned()),
             ("cheese", "comté".to_owned()),
             ("meat", "ham".to_owned()),
@@ -288,5 +325,11 @@ mod tests {
         .unwrap();
         assert_eq!("bread=ba%2Fguette&cheese=comt%C3%A9&meat=ham&fat=butter", query);
         assert_eq!("", serde_urlencoded::to_string(()).unwrap());
+        assert_eq!("", serde_urlencoded::to_string(Vec::<()>::new()).unwrap());
+    }
+    #[test]
+    #[should_panic]
+    fn test_query_url4() {
+        let _ = serde_urlencoded::to_string(("k", "v")).unwrap();
     }
 }

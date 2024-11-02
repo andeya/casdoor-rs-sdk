@@ -1,4 +1,4 @@
-use jwt_claims::RegisteredClaims;
+use cubix::jwt_claims::RegisteredClaims;
 pub use oauth2::TokenResponse;
 use serde::{Deserialize, Serialize};
 
@@ -40,15 +40,15 @@ impl Model for Session {
     fn ident() -> &'static str {
         "session"
     }
-
+    fn plural_ident() -> &'static str {
+        "sessions"
+    }
     fn owner(&self) -> &str {
         &self.owner
     }
-
     fn name(&self) -> &str {
         &self.name
     }
-
     fn support_update_columns() -> bool {
         true
     }

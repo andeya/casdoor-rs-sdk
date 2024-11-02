@@ -23,15 +23,15 @@ impl Model for Enforcer {
     fn ident() -> &'static str {
         "enforcer"
     }
-
+    fn plural_ident() -> &'static str {
+        "enforcers"
+    }
     fn owner(&self) -> &str {
         &self.owner
     }
-
     fn name(&self) -> &str {
         &self.name
     }
-
     fn support_update_columns() -> bool {
         false
     }

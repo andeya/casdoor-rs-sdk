@@ -1,16 +1,25 @@
 //! A [Casdoor](https://github.com/casdoor/casdoor) SDK (contain APIs) with more complete interfaces and better usability.
 
+mod application;
 mod authn;
 mod authz;
+mod cert;
 mod config;
+mod organization;
+mod provider;
 mod sdk;
 mod user;
 pub mod utils;
+
+pub use application::*;
 pub use authn::*;
 pub use authz::*;
 #[cfg(feature = "api")]
 pub use casdoor_api::{apis, models as api_models};
+pub use cert::*;
 pub use config::*;
+pub use organization::*;
+pub use provider::*;
 pub use reqwest::{Method, StatusCode, Url};
 pub use sdk::*;
 pub use user::*;

@@ -1,6 +1,6 @@
 [package]
 name = "casdoor-rs-sdk"
-version = "2.2.4"
+version = "2.3.0"
 edition = "2021"
 license = "Apache-2.0"
 description = "A Casdoor SDK (contain APIs) with more complete interfaces and better usability."
@@ -22,14 +22,13 @@ jsonwebtoken = "9.3.0"
 urlencoding = "2.1"
 oauth2 = "4.1"
 toml = "0.8"
-getset2 = "0.2"
+cubix = ">=0.7.0"
 salvo = { version = ">=0.74", default-features = false, features = [
     "oapi",
 ], optional = true }
-jwt-claims = "~1.0.2"
 casdoor-api = { package = "casdoor-sdk", version = "2.0.4", optional = true }
 
 [features]
 default = ["api", "salvo"]
-salvo = ["dep:salvo", "jwt-claims/salvo"]
+salvo = ["dep:salvo", "cubix/salvo"]
 api = ["dep:casdoor-api"]

@@ -18,6 +18,8 @@ pub trait Model: Debug + Clone + PartialEq + Eq + DeserializeOwned + Serialize {
 pub trait Model: Debug + Clone + PartialEq + Eq + DeserializeOwned + Serialize + salvo::prelude::ToSchema {
     /// Model identifier, used for splicing URLs.
     fn ident() -> &'static str;
+    /// Models identifier, used for splicing URLs.
+    fn plural_ident() -> &'static str;
     /// Indicate whether this model currently supports updating individual columns one by one.
     fn support_update_columns() -> bool;
     fn owner(&self) -> &str;
@@ -118,4 +120,26 @@ pub struct QueryArgs {
     #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
     #[serde(rename = "sortOrder", skip_serializing_if = "Option::is_none")]
     pub sort_order: Option<String>,
+}
+
+pub(crate) trait IsQueryArgs: Serialize {}
+
+impl IsQueryArgs for QueryArgs {}
+
+#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct QueryResult<M> {
+    items: Vec<M>,
+    total: i64,
+}
+
+impl<M> From<(Vec<M>, i64)> for QueryResult<M> {
+    #[inline(always)]
+    fn from(value: (Vec<M>, i64)) -> Self {
+        Self {
+            items: value.0,
+            total: value.1,
+        }
+    }
 }

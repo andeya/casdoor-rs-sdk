@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt::Display};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{utils::null_to_default, Model};
+use crate::{utils::null_to_default, IsQueryArgs, Model};
 
 #[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
 #[derive(Serialize, Deserialize, Debug)]
@@ -195,15 +195,15 @@ impl Model for User {
     fn ident() -> &'static str {
         "user"
     }
-
+    fn plural_ident() -> &'static str {
+        "users"
+    }
     fn owner(&self) -> &str {
         &self.owner
     }
-
     fn name(&self) -> &str {
         &self.name
     }
-
     fn support_update_columns() -> bool {
         true
     }
@@ -340,6 +340,7 @@ pub struct UserQueryArgs {
     #[serde(rename = "sortOrder", skip_serializing_if = "Option::is_none")]
     pub sort_order: Option<String>,
 }
+impl IsQueryArgs for UserQueryArgs {}
 
 #[cfg_attr(feature = "salvo", derive(salvo::prelude::ToParameters, salvo::prelude::ToSchema))]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq)]

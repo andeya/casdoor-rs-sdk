@@ -1,6 +1,6 @@
 use std::{fs::File, io::Read};
 
-use getset2::Getters;
+use cubix::getset2::Getters;
 use serde::{Deserialize, Serialize};
 
 /// Config is the core configuration.

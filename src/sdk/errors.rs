@@ -1,5 +1,11 @@
 use std::fmt::Display;
 
+use cubix::api_response::error_code::CodeSegment::{S98, S99};
+pub use cubix::api_response::{
+    error_code::{CodeSegment, ErrorCode},
+    ApiError,
+};
+
 use crate::StatusCode;
 
 #[derive(Debug)]
@@ -116,5 +122,18 @@ impl SdkError {
 impl From<SdkError> for salvo::prelude::StatusError {
     fn from(value: SdkError) -> Self {
         value.into_salvo()
+    }
+}
+
+static mut ERR_CODE_SUFFIX: (CodeSegment, CodeSegment, CodeSegment) = (S99, S99, S98);
+
+pub const unsafe fn init_error_code_suffix(s1: CodeSegment, s2: CodeSegment, s3: CodeSegment) {
+    ERR_CODE_SUFFIX = (s1, s2, s3)
+}
+
+impl From<SdkError> for ApiError {
+    fn from(value: SdkError) -> Self {
+        let (s1, s2, s3) = unsafe { ERR_CODE_SUFFIX };
+        ErrorCode::from(value.code).api_error3(s1, s2, s3, value.to_string())
     }
 }
