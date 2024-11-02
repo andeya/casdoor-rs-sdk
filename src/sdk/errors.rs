@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, sync::Once};
 
 use cubix::api_response::error_code::CodeSegment::{S98, S99};
 pub use cubix::api_response::{
@@ -126,16 +126,13 @@ impl From<SdkError> for salvo::prelude::StatusError {
 }
 
 static mut ERR_CODE_SUFFIX: (CodeSegment, CodeSegment, CodeSegment) = (S99, S99, S98);
+static INIT: Once = Once::new();
 
 /// Initialize the suffix of the error code.
-/// # Safety
-///  It must be called in advance in a synchronous environment.
-/// # Example:
-/// ```
-/// const _: () = unsafe { init_error_code_suffix(S99, S99, S98) };
-/// ```
-pub const unsafe fn init_error_code_suffix(s1: CodeSegment, s2: CodeSegment, s3: CodeSegment) {
-    ERR_CODE_SUFFIX = (s1, s2, s3)
+pub fn init_error_code_suffix(s1: CodeSegment, s2: CodeSegment, s3: CodeSegment) {
+    unsafe {
+        INIT.call_once(|| ERR_CODE_SUFFIX = (s1, s2, s3));
+    }
 }
 
 impl From<SdkError> for ApiError {

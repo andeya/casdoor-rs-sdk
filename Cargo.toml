@@ -1,6 +1,6 @@
 [package]
 name = "casdoor-rs-sdk"
-version = "2.3.0"
+version = "2.3.1"
 edition = "2021"
 license = "Apache-2.0"
 description = "A Casdoor SDK (contain APIs) with more complete interfaces and better usability."
