@@ -127,6 +127,13 @@ impl From<SdkError> for salvo::prelude::StatusError {
 
 static mut ERR_CODE_SUFFIX: (CodeSegment, CodeSegment, CodeSegment) = (S99, S99, S98);
 
+/// Initialize the suffix of the error code.
+/// # Safety
+///  It must be called in advance in a synchronous environment.
+/// # Example:
+/// ```
+/// const _: () = unsafe { init_error_code_suffix(S99, S99, S98) };
+/// ```
 pub const unsafe fn init_error_code_suffix(s1: CodeSegment, s2: CodeSegment, s3: CodeSegment) {
     ERR_CODE_SUFFIX = (s1, s2, s3)
 }

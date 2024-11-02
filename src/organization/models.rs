@@ -20,14 +20,14 @@ pub struct Organization {
     default_application: String,
     tags: Vec<String>,
     languages: Vec<String>,
-    theme_data: Option<Box<ThemeData>>,
+    theme_data: Option<ThemeData>,
     master_password: String,
     init_score: i32,
     enable_soft_deletion: bool,
     is_profile_public: bool,
 
-    mfa_items: Vec<Box<MfaItem>>,
-    account_items: Vec<Box<AccountItem>>,
+    mfa_items: Vec<MfaItem>,
+    account_items: Vec<AccountItem>,
 }
 
 #[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]

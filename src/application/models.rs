@@ -30,15 +30,15 @@ pub struct Application {
     enable_link_with_email: bool,
     org_choice_mode: String,
     saml_reply_url: String,
-    providers: Vec<Box<ProviderItem>>,
-    signin_methods: Vec<Box<SigninMethod>>,
-    signup_items: Vec<Box<SignupItem>>,
-    signin_items: Vec<Box<SigninItem>>,
+    providers: Vec<ProviderItem>,
+    signin_methods: Vec<SigninMethod>,
+    signup_items: Vec<SignupItem>,
+    signin_items: Vec<SigninItem>,
     grant_types: Vec<String>,
-    organization_obj: Option<Box<Organization>>,
+    organization_obj: Option<Organization>,
     cert_public_key: String,
     tags: Vec<String>,
-    saml_attributes: Vec<Box<SamlItem>>,
+    saml_attributes: Vec<SamlItem>,
     is_shared: bool,
 
     client_id: String,
@@ -56,7 +56,7 @@ pub struct Application {
     terms_of_use: String,
     signup_html: String,
     signin_html: String,
-    theme_data: Option<Box<ThemeData>>,
+    theme_data: Option<ThemeData>,
     footer_html: String,
     form_css: String,
     form_css_mobile: String,
@@ -67,7 +67,7 @@ pub struct Application {
     failed_signin_limit: i32,
     failed_signin_frozen_time: i32,
 
-    cert_obj: Option<Box<Cert>>,
+    cert_obj: Option<Cert>,
 }
 
 #[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
@@ -83,7 +83,7 @@ pub struct ProviderItem {
     prompted: bool,
     alert_type: String,
     rule: String,
-    provider: Option<Box<Provider>>,
+    provider: Option<Provider>,
 }
 
 #[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
