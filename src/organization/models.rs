@@ -80,24 +80,26 @@ impl Model for Organization {
 #[cfg_attr(feature = "salvo", derive(salvo::prelude::ToParameters, salvo::prelude::ToSchema))]
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 pub struct OrganizationQueryArgs {
-    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query,required=false)))]
     #[serde(rename = "pageSize", skip_serializing_if = "Option::is_none")]
     pub page_size: Option<i32>,
-    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query,required=false)))]
     #[serde(rename = "p", skip_serializing_if = "Option::is_none")]
     pub page: Option<i32>,
-    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query,required=false)))]
     #[serde(rename = "field", skip_serializing_if = "Option::is_none")]
     pub field: Option<String>,
-    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query,required=false)))]
     #[serde(rename = "value", skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
-    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query,required=false)))]
     #[serde(rename = "sortField", skip_serializing_if = "Option::is_none")]
     pub sort_field: Option<String>,
-    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query,required=false)))]
     #[serde(rename = "sortOrder", skip_serializing_if = "Option::is_none")]
     pub sort_order: Option<String>,
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query,required=false)))]
+    #[serde(rename = "sortOrder", skip_serializing_if = "Option::is_none")]
     pub organization_name: Option<String>,
 }
 

@@ -127,16 +127,16 @@ impl Model for Role {
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct EnforceQueryArgs {
-    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query,required=false)))]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub permission_id: Option<String>,
-    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query,required=false)))]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub model_id: Option<String>,
-    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query,required=false)))]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
-    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query,required=false)))]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub enforcer_id: Option<String>,
 }
@@ -155,13 +155,13 @@ pub struct EnforceArgs {
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct BatchEnforceQueryArgs {
-    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query,required=false)))]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub permission_id: Option<String>,
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query,required=false)))]
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
     pub model_id: Option<String>,
-    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query,required=false)))]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub enforcer_id: Option<String>,
 }
