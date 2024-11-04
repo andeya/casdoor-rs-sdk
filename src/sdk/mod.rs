@@ -31,7 +31,7 @@ impl Config {
     }
 }
 
-pub const NONE_BODY: Option<&()> = None::<&()>;
+pub const NO_BODY: Body<'static, ()> = Body::NoBody::<'static, ()>;
 
 impl Sdk {
     pub fn new(config: Config) -> Self {
@@ -44,7 +44,7 @@ impl Sdk {
         &self,
         method: Method,
         url_path: impl AsRef<str>,
-        body: Option<&impl Serialize>,
+        body: Body<'_, impl Serialize>,
     ) -> SdkResult<ApiResponse<Data, Data2>>
     where
         Data: DeserializeOwned,
@@ -55,8 +55,10 @@ impl Sdk {
         let mut req = reqwest::Client::new()
             .request(method, url)
             .basic_auth(self.config.client_id().clone(), Some(self.config.client_secret().clone()));
-        if let Some(body) = body {
-            req = req.json(body);
+        match body {
+            Body::Json(body) => req = req.json(body),
+            Body::Form(body) => req = req.form(body),
+            Body::NoBody => {}
         }
         Ok(req.send().await?.json::<ApiResponse<Data, Data2>>().await?)
     }
@@ -64,7 +66,7 @@ impl Sdk {
         &self,
         method: Method,
         url_path: impl AsRef<str>,
-        body: Option<&impl Serialize>,
+        body: Body<'_, impl Serialize>,
     ) -> SdkResult<ApiResponse<Data, ()>>
     where
         Data: DeserializeOwned,
@@ -75,7 +77,7 @@ impl Sdk {
         &self,
         method: Method,
         url_path: impl AsRef<str>,
-        body: Option<&impl Serialize>,
+        body: Body<'_, impl Serialize>,
     ) -> SdkResult<ApiResponse<(), Data2>>
     where
         Data2: DeserializeOwned,
@@ -91,7 +93,7 @@ impl Sdk {
                 url_path += &format!("&columns={}", columns.join(","));
             }
         }
-        self.request_data::<ModelActionAffect>(Method::POST, url_path, Some(&args.model))
+        self.request_data::<ModelActionAffect>(Method::POST, url_path, Body::Json(&args.model))
             .await?
             .into_data_default()
             .map(|v| v.is_affected())
@@ -121,12 +123,12 @@ impl Sdk {
         .await
     }
     pub async fn get_model_by_name<M: Model>(&self, name: String) -> Result<Option<M>, SdkError> {
-        self.request_data(Method::GET, format!("/api/get-{}?id={}", M::ident(), self.id(&name)), NONE_BODY)
+        self.request_data(Method::GET, format!("/api/get-{}?id={}", M::ident(), self.id(&name)), NO_BODY)
             .await?
             .into_data()
     }
     pub async fn get_default_model<M: Model>(&self, name: String) -> Result<Option<M>, SdkError> {
-        self.request_data(Method::GET, format!("/api/get-default-{}?id={}", M::ident(), self.id(&name)), NONE_BODY)
+        self.request_data(Method::GET, format!("/api/get-default-{}?id={}", M::ident(), self.id(&name)), NO_BODY)
             .await?
             .into_data()
     }
@@ -138,7 +140,7 @@ impl Sdk {
             "get-".to_owned()
         } + M::plural_ident();
 
-        self.request(Method::GET, self.get_url_path(ident, true, query_args)?, NONE_BODY)
+        self.request(Method::GET, self.get_url_path(ident, true, query_args)?, NO_BODY)
             .await?
             .into_result_default()
             .map(Into::into)
@@ -158,6 +160,12 @@ impl Sdk {
         }
         Ok(query)
     }
+}
+
+pub enum Body<'a, T = ()> {
+    Json(&'a T),
+    Form(&'a T),
+    NoBody,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

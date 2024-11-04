@@ -334,6 +334,7 @@ impl IsQueryArgs for UserQueryArgs {}
 
 #[cfg_attr(feature = "salvo", derive(salvo::prelude::ToParameters, salvo::prelude::ToSchema))]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub struct GetUserArgs {
     #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -376,6 +377,22 @@ pub struct UserGroupQueryArgs {
     pub sort_order: Option<String>,
 }
 impl IsQueryArgs for UserGroupQueryArgs {}
+
+#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToParameters, salvo::prelude::ToSchema))]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct SetPasswordArgs {
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    pub user_name: String,
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    pub new_password: String,
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub old_password: Option<String>,
+    #[cfg_attr(feature = "salvo", salvo(parameter(parameter_in=Query)))]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_owner: Option<String>,
+}
 
 #[cfg(test)]
 mod tests {

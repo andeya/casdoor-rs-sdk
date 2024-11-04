@@ -1,11 +1,11 @@
 mod models;
 pub use models::*;
 
-use crate::{Method, QueryResult, Sdk, SdkResult, NONE_BODY};
+use crate::{Method, QueryResult, Sdk, SdkResult, NO_BODY};
 
 impl Sdk {
     pub async fn get_user_application(&self, user_name: &str) -> SdkResult<Option<Application>> {
-        self.request_data(Method::GET, format!("/api/get-user-application?id={}", self.id(user_name)), NONE_BODY)
+        self.request_data(Method::GET, format!("/api/get-user-application?id={}", self.id(user_name)), NO_BODY)
             .await?
             .into_data()
     }

@@ -4,7 +4,7 @@ pub use models::*;
 use oauth2::{basic::BasicClient, reqwest::async_http_client, AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenUrl};
 pub use oauth2::{basic::BasicTokenType, AccessToken, RefreshToken, Scope, TokenResponse, TokenType};
 
-use crate::{Method, QueryArgs, QueryResult, Sdk, SdkResult, NONE_BODY};
+use crate::{Method, QueryArgs, QueryResult, Sdk, SdkResult, NO_BODY};
 impl Sdk {
     pub fn authn(&self) -> AuthSdk {
         AuthSdk { sdk: self.clone() }
@@ -108,7 +108,7 @@ impl AuthSdk {
             .request_data(
                 Method::GET,
                 self.sdk.get_url_path("get-session", true, [("sessionPkId", session_pk_id)])?,
-                NONE_BODY,
+                NO_BODY,
             )
             .await?
             .into_data_default()
@@ -120,7 +120,7 @@ impl AuthSdk {
                 Method::GET,
                 self.sdk
                     .get_url_path("is-session-duplicated", true, [("sessionPkId", session_pk_id), ("sessionId", session_id)])?,
-                NONE_BODY,
+                NO_BODY,
             )
             .await?
             .into_data_default()

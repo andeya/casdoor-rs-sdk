@@ -1,7 +1,7 @@
 mod models;
 pub use models::*;
 
-use crate::{Method, QueryResult, Sdk, SdkResult, NONE_BODY};
+use crate::{Method, QueryResult, Sdk, SdkResult, NO_BODY};
 
 impl Sdk {
     pub async fn get_default_organization(&self, name: String) -> SdkResult<Option<Organization>> {
@@ -12,7 +12,7 @@ impl Sdk {
     }
     /// NOTE: Only obtain fields `name` and `display_name` of `Organization`.
     pub async fn get_organization_names(&self) -> SdkResult<Vec<Organization>> {
-        self.request_data(Method::GET, self.get_url_path("get-organization-names", true, ())?, NONE_BODY)
+        self.request_data(Method::GET, self.get_url_path("get-organization-names", true, ())?, NO_BODY)
             .await?
             .into_data_default()
     }
