@@ -27,7 +27,7 @@ impl Sdk {
     pub async fn get_user(&self, args: GetUserArgs) -> SdkResult<Option<User>> {
         match (args.user_id, args.name, args.email, args.phone) {
             (Some(user_id), None, None, None) => self.get_user_by_user_id(user_id).await,
-            (None, Some(name), None, None) => self.get_user_by_name(name).await,
+            (None, Some(name), None, None) => self.get_model_by_name(name).await,
             (None, None, Some(email), None) => self.get_user_by_email(email).await,
             (None, None, None, Some(phone)) => self.get_user_by_phone(phone).await,
             _ => Err(SdkError::new(
@@ -35,14 +35,6 @@ impl Sdk {
                 r##"The parameters "uid", "name", "email" and "phone" can and must only pass one."##,
             )),
         }
-    }
-
-    pub async fn get_user_by_name(&self, name: String) -> SdkResult<Option<User>> {
-        self.get_model_by_name(name).await
-    }
-
-    pub async fn get_user_group_by_name(&self, name: String) -> SdkResult<Option<UserGroup>> {
-        self.get_model_by_name(name).await
     }
 
     pub async fn get_user_by_email(&self, email: String) -> SdkResult<Option<User>> {

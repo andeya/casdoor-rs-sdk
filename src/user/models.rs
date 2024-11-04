@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt::Display};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{utils::null_to_default, IsQueryArgs, Model};
+use crate::{utils::null_to_default, IsQueryArgs, Model, Permission, Role};
 
 #[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
 #[derive(Serialize, Deserialize, Debug)]
@@ -273,58 +273,6 @@ pub struct MultiFactorAuth {
     pub recovery_codes: Vec<String>,
     pub secret: String,
     pub url: String,
-}
-
-#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
-#[serde(rename_all = "camelCase", default)]
-pub struct Permission {
-    #[serde(deserialize_with = "null_to_default")]
-    pub actions: Vec<String>,
-    pub adapter: String,
-    pub approve_time: String,
-    pub approver: String,
-    pub created_time: String,
-    pub description: String,
-    pub display_name: String,
-    #[serde(deserialize_with = "null_to_default")]
-    pub domains: Vec<String>,
-    pub effect: String,
-    #[serde(deserialize_with = "null_to_default")]
-    pub groups: Vec<String>,
-    pub is_enabled: bool,
-    pub model: String,
-    pub name: String,
-    pub owner: String,
-    pub resource_type: String,
-    #[serde(deserialize_with = "null_to_default")]
-    pub resources: Vec<String>,
-    #[serde(deserialize_with = "null_to_default")]
-    pub roles: Vec<String>,
-    pub state: String,
-    pub submitter: String,
-    #[serde(deserialize_with = "null_to_default")]
-    pub users: Vec<String>,
-}
-
-#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
-#[serde(rename_all = "camelCase", default)]
-pub struct Role {
-    pub created_time: String,
-    pub description: String,
-    pub display_name: String,
-    #[serde(deserialize_with = "null_to_default")]
-    pub domains: Vec<String>,
-    #[serde(deserialize_with = "null_to_default")]
-    pub groups: Vec<String>,
-    pub is_enabled: bool,
-    pub name: String,
-    pub owner: String,
-    #[serde(deserialize_with = "null_to_default")]
-    pub roles: Vec<String>,
-    #[serde(deserialize_with = "null_to_default")]
-    pub users: Vec<String>,
 }
 
 #[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]

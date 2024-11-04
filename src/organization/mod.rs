@@ -4,9 +4,6 @@ pub use models::*;
 use crate::{Method, QueryResult, Sdk, SdkResult, NONE_BODY};
 
 impl Sdk {
-    pub async fn get_organization_by_name(&self, name: String) -> SdkResult<Option<Organization>> {
-        self.get_model_by_name(name).await
-    }
     pub async fn get_default_organization(&self, name: String) -> SdkResult<Option<Organization>> {
         self.get_default_model(name).await
     }

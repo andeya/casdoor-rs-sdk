@@ -5,9 +5,6 @@ pub use models::*;
 use crate::{Method, QueryArgs, QueryResult, Sdk, SdkResult, NONE_BODY};
 
 impl Sdk {
-    pub async fn get_enforcer(&self, name: String) -> SdkResult<Option<Enforcer>> {
-        self.get_model_by_name(name).await
-    }
     pub async fn get_enforcers(&self, query_args: QueryArgs) -> SdkResult<QueryResult<Enforcer>> {
         self.get_models((), query_args).await
     }
@@ -69,7 +66,29 @@ impl Sdk {
         .await?
         .into_data_default()
     }
-    pub async fn get_all_roles(&self, user_id: &str) -> SdkResult<Vec<String>> {
+    pub async fn get_permissions(&self, query_args: QueryArgs) -> SdkResult<QueryResult<Permission>> {
+        self.get_models((), query_args).await
+    }
+    pub async fn get_permissions_by_submitter(&self) -> SdkResult<QueryResult<Permission>> {
+        self.request(Method::GET, self.get_url_path("get-permissions-by-submitter", false, ())?, NONE_BODY)
+            .await?
+            .into_result_default()
+            .map(Into::into)
+    }
+    pub async fn get_permissions_by_role(&self, role_name: &str) -> SdkResult<QueryResult<Permission>> {
+        self.request(
+            Method::GET,
+            self.get_url_path("get-permissions-by-role", false, [("id", self.id(&role_name))])?,
+            NONE_BODY,
+        )
+        .await?
+        .into_result_default()
+        .map(Into::into)
+    }
+    pub async fn get_roles(&self, query_args: QueryArgs) -> SdkResult<QueryResult<Role>> {
+        self.get_models((), query_args).await
+    }
+    pub async fn get_roles_by_user(&self, user_id: &str) -> SdkResult<Vec<String>> {
         self.request_data(Method::GET, self.get_url_path("get-all-roles", false, [("userId", user_id)])?, NONE_BODY)
             .await?
             .into_data_default()

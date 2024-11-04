@@ -37,6 +37,92 @@ impl Model for Enforcer {
     }
 }
 
+#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Permission {
+    #[serde(deserialize_with = "null_to_default")]
+    pub actions: Vec<String>,
+    pub adapter: String,
+    pub approve_time: String,
+    pub approver: String,
+    pub created_time: String,
+    pub description: String,
+    pub display_name: String,
+    #[serde(deserialize_with = "null_to_default")]
+    pub domains: Vec<String>,
+    pub effect: String,
+    #[serde(deserialize_with = "null_to_default")]
+    pub groups: Vec<String>,
+    pub is_enabled: bool,
+    pub model: String,
+    pub name: String,
+    pub owner: String,
+    pub resource_type: String,
+    #[serde(deserialize_with = "null_to_default")]
+    pub resources: Vec<String>,
+    #[serde(deserialize_with = "null_to_default")]
+    pub roles: Vec<String>,
+    pub state: String,
+    pub submitter: String,
+    #[serde(deserialize_with = "null_to_default")]
+    pub users: Vec<String>,
+}
+impl Model for Permission {
+    fn ident() -> &'static str {
+        "permission"
+    }
+    fn plural_ident() -> &'static str {
+        "permissions"
+    }
+    fn owner(&self) -> &str {
+        &self.owner
+    }
+    fn name(&self) -> &str {
+        &self.name
+    }
+    fn support_update_columns() -> bool {
+        false
+    }
+}
+
+#[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Role {
+    pub created_time: String,
+    pub description: String,
+    pub display_name: String,
+    #[serde(deserialize_with = "null_to_default")]
+    pub domains: Vec<String>,
+    #[serde(deserialize_with = "null_to_default")]
+    pub groups: Vec<String>,
+    pub is_enabled: bool,
+    pub name: String,
+    pub owner: String,
+    #[serde(deserialize_with = "null_to_default")]
+    pub roles: Vec<String>,
+    #[serde(deserialize_with = "null_to_default")]
+    pub users: Vec<String>,
+}
+impl Model for Role {
+    fn ident() -> &'static str {
+        "role"
+    }
+    fn plural_ident() -> &'static str {
+        "roles"
+    }
+    fn owner(&self) -> &str {
+        &self.owner
+    }
+    fn name(&self) -> &str {
+        &self.name
+    }
+    fn support_update_columns() -> bool {
+        false
+    }
+}
+
 #[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema, salvo::prelude::ToParameters))]
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]

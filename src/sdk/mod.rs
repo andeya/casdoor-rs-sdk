@@ -120,7 +120,7 @@ impl Sdk {
         })
         .await
     }
-    pub(crate) async fn get_model_by_name<M: Model>(&self, name: String) -> Result<Option<M>, SdkError> {
+    pub async fn get_model_by_name<M: Model>(&self, name: String) -> Result<Option<M>, SdkError> {
         self.request_data(Method::GET, format!("/api/get-{}?id={}", M::ident(), self.id(&name)), NONE_BODY)
             .await?
             .into_data()
