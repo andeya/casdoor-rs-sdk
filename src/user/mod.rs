@@ -10,6 +10,10 @@ impl Sdk {
         self.get_models((), query_args).await
     }
 
+    pub async fn get_user_groups(&self, query_args: UserGroupQueryArgs) -> SdkResult<QueryResult<UserGroup>> {
+        self.get_models((), query_args).await
+    }
+
     pub async fn get_user_count(&self, is_online: QueryUserSet) -> SdkResult<i64> {
         self.request_data(
             Method::GET,
@@ -34,6 +38,10 @@ impl Sdk {
     }
 
     pub async fn get_user_by_name(&self, name: String) -> SdkResult<Option<User>> {
+        self.get_model_by_name(name).await
+    }
+
+    pub async fn get_user_group_by_name(&self, name: String) -> SdkResult<Option<UserGroup>> {
         self.get_model_by_name(name).await
     }
 
