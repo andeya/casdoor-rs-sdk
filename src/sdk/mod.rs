@@ -37,9 +37,15 @@ impl Sdk {
     pub fn new(config: Config) -> Self {
         Self { config: Arc::new(config) }
     }
+
     pub fn id(&self, name: &str) -> String {
         format!("{}/{}", self.org_name(), name)
     }
+
+    pub fn user_id_query(&self, user_name: &str) -> String {
+        serde_urlencoded::to_string([("userId", format!("{}/{}", self.org_name(), user_name))]).unwrap()
+    }
+
     pub async fn request<Data, Data2>(
         &self,
         method: Method,
@@ -62,6 +68,7 @@ impl Sdk {
         }
         Ok(req.send().await?.json::<ApiResponse<Data, Data2>>().await?)
     }
+
     pub async fn request_data<Data>(
         &self,
         method: Method,
@@ -73,6 +80,7 @@ impl Sdk {
     {
         self.request::<Data, ()>(method, url_path, body).await
     }
+
     pub async fn request_data2<Data2>(
         &self,
         method: Method,
@@ -84,6 +92,7 @@ impl Sdk {
     {
         self.request::<(), Data2>(method, url_path, body).await
     }
+
     pub async fn modify_model<T: Model>(&self, args: ModelModifyArgs<T>) -> SdkResult<bool> {
         // When adding model, the id parameter is not needed.
         let mut url_path = format!("/api/{}-{}?id={}", args.action, T::ident(), args.model.id());
@@ -98,6 +107,7 @@ impl Sdk {
             .into_data_default()
             .map(|v| v.is_affected())
     }
+
     pub async fn add_model<T: Model>(&self, args: ModelAddArgs<T>) -> SdkResult<bool> {
         self.modify_model(ModelModifyArgs {
             action: ModelAction::Add,
@@ -106,6 +116,7 @@ impl Sdk {
         })
         .await
     }
+
     pub async fn update_model<T: Model>(&self, args: ModelUpdateArgs<T>) -> SdkResult<bool> {
         self.modify_model(ModelModifyArgs {
             action: ModelAction::Update,
@@ -114,6 +125,7 @@ impl Sdk {
         })
         .await
     }
+
     pub async fn delete_model<T: Model>(&self, args: ModelDeleteArgs<T>) -> SdkResult<bool> {
         self.modify_model(ModelModifyArgs {
             action: ModelAction::Delete,
@@ -122,16 +134,19 @@ impl Sdk {
         })
         .await
     }
+
     pub async fn get_model_by_name<M: Model>(&self, name: String) -> Result<Option<M>, SdkError> {
         self.request_data(Method::GET, format!("/api/get-{}?id={}", M::ident(), self.id(&name)), NO_BODY)
             .await?
             .into_data()
     }
+
     pub async fn get_default_model<M: Model>(&self, name: String) -> Result<Option<M>, SdkError> {
         self.request_data(Method::GET, format!("/api/get-default-{}?id={}", M::ident(), self.id(&name)), NO_BODY)
             .await?
             .into_data()
     }
+
     // Query and return some models and the total number of models.
     pub(crate) async fn get_models<M: Model>(&self, mid_ident: impl Into<MaybeString>, query_args: impl IsQueryArgs) -> SdkResult<QueryResult<M>> {
         let ident = if let Some(mid) = mid_ident.into().option_string() {
@@ -145,9 +160,11 @@ impl Sdk {
             .into_result_default()
             .map(Into::into)
     }
+
     pub(crate) fn get_url_path(&self, ident: impl Into<String>, add_owner_query: bool, query_args: impl Serialize) -> SdkResult<String> {
         Ok(format!("/api/{}?{}", ident.into(), self.get_url_query_part(add_owner_query, query_args)?))
     }
+
     pub(crate) fn get_url_query_part(&self, add_owner_query: bool, query_args: impl Serialize) -> SdkResult<String> {
         let mut query = if add_owner_query {
             format!("owner={}", self.org_name())
