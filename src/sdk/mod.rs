@@ -161,11 +161,11 @@ impl Sdk {
             .map(Into::into)
     }
 
-    pub(crate) fn get_url_path(&self, ident: impl Into<String>, add_owner_query: bool, query_args: impl Serialize) -> SdkResult<String> {
+    pub fn get_url_path(&self, ident: impl Into<String>, add_owner_query: bool, query_args: impl Serialize) -> SdkResult<String> {
         Ok(format!("/api/{}?{}", ident.into(), self.get_url_query_part(add_owner_query, query_args)?))
     }
 
-    pub(crate) fn get_url_query_part(&self, add_owner_query: bool, query_args: impl Serialize) -> SdkResult<String> {
+    pub fn get_url_query_part(&self, add_owner_query: bool, query_args: impl Serialize) -> SdkResult<String> {
         let mut query = if add_owner_query {
             format!("owner={}", self.org_name())
         } else {
