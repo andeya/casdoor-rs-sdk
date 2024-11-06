@@ -3,7 +3,7 @@ use std::fmt::{Debug, Display};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 #[cfg(not(feature = "salvo"))]
-pub trait Model: Debug + Clone + PartialEq + Eq + DeserializeOwned + Serialize {
+pub trait Model: Debug + Clone + DeserializeOwned + Serialize {
     /// Model identifier, used for splicing URLs.
     fn ident() -> &'static str;
     /// Models identifier, used for splicing URLs.
@@ -17,7 +17,7 @@ pub trait Model: Debug + Clone + PartialEq + Eq + DeserializeOwned + Serialize {
     }
 }
 #[cfg(feature = "salvo")]
-pub trait Model: Debug + Clone + PartialEq + Eq + DeserializeOwned + Serialize + salvo::prelude::ToSchema {
+pub trait Model: Debug + Clone + DeserializeOwned + Serialize + salvo::prelude::ToSchema {
     /// Model identifier, used for splicing URLs.
     fn ident() -> &'static str;
     /// Models identifier, used for splicing URLs.
