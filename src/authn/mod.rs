@@ -1,10 +1,12 @@
 mod models;
 use jsonwebtoken::{Algorithm, DecodingKey, TokenData, Validation};
 pub use models::*;
-use oauth2::{basic::BasicClient, reqwest::async_http_client, AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenUrl};
-pub use oauth2::{basic::BasicTokenType, AccessToken, RefreshToken, Scope, TokenResponse, TokenType};
+pub use oauth2::{AccessToken, RefreshToken, Scope, TokenResponse, TokenType, basic::BasicTokenType};
+use oauth2::{
+    AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenUrl, basic::BasicClient, reqwest::async_http_client,
+};
 
-use crate::{Method, QueryArgs, QueryResult, Sdk, SdkResult, NO_BODY};
+use crate::{Method, NO_BODY, QueryArgs, QueryResult, Sdk, SdkResult};
 impl Sdk {
     pub fn authn(&self) -> AuthSdk {
         AuthSdk { sdk: self.clone() }
@@ -30,7 +32,8 @@ impl AuthSdk {
         Ok(Some(TokenUrl::new(self.sdk.endpoint().clone() + url_path)?))
     }
 
-    /// Gets the pivotal and necessary secret to interact with the Casdoor server
+    /// Gets the pivotal and necessary secret to interact with the Casdoor
+    /// server
     pub async fn get_oauth_token(&self, code: String) -> SdkResult<impl TokenResponse<BasicTokenType>> {
         Ok(BasicClient::new(
             self.client_id(),
@@ -60,7 +63,11 @@ impl AuthSdk {
         let mut validation = Validation::new(Algorithm::RS256);
         validation.set_audience(&[self.sdk.client_id()]);
 
-        let td: TokenData<Claims> = jsonwebtoken::decode(token, &DecodingKey::from_rsa_pem(self.sdk.certificate().as_bytes())?, &validation)?;
+        let td: TokenData<Claims> = jsonwebtoken::decode(
+            token,
+            &DecodingKey::from_rsa_pem(self.sdk.certificate().as_bytes())?,
+            &validation,
+        )?;
         Ok(td.claims)
     }
 
@@ -80,12 +87,16 @@ impl AuthSdk {
     }
 
     pub fn get_signup_url_enable_password(&self) -> String {
-        format!("{}/signup/{}", self.sdk.endpoint(), self.sdk.app_name().clone().unwrap_or_default())
+        format!(
+            "{}/signup/{}",
+            self.sdk.endpoint(),
+            self.sdk.app_name().clone().unwrap_or_default()
+        )
     }
 
     pub fn get_user_profile_url(&self, uname: String, token: Option<String>) -> String {
         let param = match token {
-            Some(token) if !token.is_empty() => format!("?access_token={}", token),
+            Some(v) if !v.is_empty() => format!("?access_token={}", v),
             _ => "".to_string(),
         };
         format!("{}/users/{}/{uname}{param}", self.sdk.endpoint(), self.sdk.org_name())
@@ -93,7 +104,7 @@ impl AuthSdk {
 
     pub fn get_my_profile_url(&self, token: Option<String>) -> String {
         let param = match token {
-            Some(token) if !token.is_empty() => format!("?access_token={}", token),
+            Some(v) if !v.is_empty() => format!("?access_token={}", v),
             _ => "".to_string(),
         };
         format!("{}/account{}", self.sdk.endpoint(), param)
@@ -107,7 +118,8 @@ impl AuthSdk {
         self.sdk
             .request_data(
                 Method::GET,
-                self.sdk.get_url_path("get-session", true, [("sessionPkId", session_pk_id)])?,
+                self.sdk
+                    .get_url_path("get-session", true, [("sessionPkId", session_pk_id)])?,
                 NO_BODY,
             )
             .await?
@@ -118,8 +130,10 @@ impl AuthSdk {
         self.sdk
             .request_data(
                 Method::GET,
-                self.sdk
-                    .get_url_path("is-session-duplicated", true, [("sessionPkId", session_pk_id), ("sessionId", session_id)])?,
+                self.sdk.get_url_path("is-session-duplicated", true, [
+                    ("sessionPkId", session_pk_id),
+                    ("sessionId", session_id),
+                ])?,
                 NO_BODY,
             )
             .await?

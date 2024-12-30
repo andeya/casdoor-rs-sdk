@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{utils::null_to_default, Model};
+use crate::{Model, utils::null_to_default};
 
 #[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
 #[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]

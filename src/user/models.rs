@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt::Display};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{utils::null_to_default, IsQueryArgs, Model, Permission, Role};
+use crate::{IsQueryArgs, Model, Permission, Role, utils::null_to_default};
 
 #[cfg_attr(feature = "salvo", derive(salvo::prelude::ToSchema))]
 #[derive(Serialize, Deserialize, Debug)]

@@ -1,10 +1,7 @@
 use std::{fmt::Display, sync::Once};
 
-use cubix::api_response::error_code::CodeSegment::{S98, S99};
-pub use cubix::api_response::{
-    error_code::{CodeSegment, ErrorCode},
-    ApiError,
-};
+pub use cubix::api_response::ApiError;
+use cubix::api_response::error_code::{ErrType, ModPath, ModSection};
 
 use crate::StatusCode;
 
@@ -17,7 +14,10 @@ pub struct SdkError {
 
 impl SdkError {
     pub fn new(code: StatusCode, inner: impl Into<SdkInnerError>) -> Self {
-        Self { code, inner: inner.into() }
+        Self {
+            code,
+            inner: inner.into(),
+        }
     }
 }
 
@@ -100,9 +100,11 @@ where
 {
     fn from(value: oauth2::RequestTokenError<RE, TE>) -> Self {
         match value {
-            oauth2::RequestTokenError::ServerResponse(_) => Self::new(StatusCode::INTERNAL_SERVER_ERROR, value.to_string()),
+            oauth2::RequestTokenError::ServerResponse(_) => {
+                Self::new(StatusCode::INTERNAL_SERVER_ERROR, value.to_string())
+            }
             oauth2::RequestTokenError::Request(_) => Self::new(StatusCode::BAD_REQUEST, value.to_string()),
-            oauth2::RequestTokenError::Parse(_, _) => Self::new(StatusCode::INTERNAL_SERVER_ERROR, value.to_string()),
+            oauth2::RequestTokenError::Parse(..) => Self::new(StatusCode::INTERNAL_SERVER_ERROR, value.to_string()),
             oauth2::RequestTokenError::Other(_) => Self::new(StatusCode::INTERNAL_SERVER_ERROR, value.to_string()),
         }
     }
@@ -125,19 +127,21 @@ impl From<SdkError> for salvo::prelude::StatusError {
     }
 }
 
-static mut ERR_CODE_SUFFIX: (CodeSegment, CodeSegment, CodeSegment) = (S99, S99, S98);
+static mut MOD_PATH: ModPath = ModPath::default();
+
 static INIT: Once = Once::new();
 
 /// Initialize the suffix of the error code.
-pub fn init_error_code_suffix(s1: CodeSegment, s2: CodeSegment, s3: CodeSegment) {
+pub fn init_error_mod_path(mod1: ModSection, mod2: ModSection, mod3: ModSection) {
     unsafe {
-        INIT.call_once(|| ERR_CODE_SUFFIX = (s1, s2, s3));
+        INIT.call_once(|| MOD_PATH = ModPath::new(mod1, mod2, mod3));
     }
 }
-
+pub const ERR_SDK_KEY: &str = "casdoor_sdk_err";
 impl From<SdkError> for ApiError {
     fn from(value: SdkError) -> Self {
-        let (s1, s2, s3) = unsafe { ERR_CODE_SUFFIX };
-        ErrorCode::from(value.code).api_error3(s1, s2, s3, value.to_string())
+        ErrType::from(value.code)
+            .new_api_error(unsafe { MOD_PATH })
+            .with_detail(ERR_SDK_KEY, value.to_string())
     }
 }

@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Display};
 
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 #[cfg(not(feature = "salvo"))]
 pub trait Model: Debug + Clone + DeserializeOwned + Serialize {
@@ -8,7 +8,8 @@ pub trait Model: Debug + Clone + DeserializeOwned + Serialize {
     fn ident() -> &'static str;
     /// Models identifier, used for splicing URLs.
     fn plural_ident() -> &'static str;
-    /// Indicate whether this model currently supports updating individual columns one by one.
+    /// Indicate whether this model currently supports updating individual
+    /// columns one by one.
     fn support_update_columns() -> bool;
     fn owner(&self) -> &str;
     fn name(&self) -> &str;
@@ -22,7 +23,8 @@ pub trait Model: Debug + Clone + DeserializeOwned + Serialize + salvo::prelude::
     fn ident() -> &'static str;
     /// Models identifier, used for splicing URLs.
     fn plural_ident() -> &'static str;
-    /// Indicate whether this model currently supports updating individual columns one by one.
+    /// Indicate whether this model currently supports updating individual
+    /// columns one by one.
     fn support_update_columns() -> bool;
     fn owner(&self) -> &str;
     fn name(&self) -> &str;
@@ -96,7 +98,7 @@ impl Display for ModelActionAffect {
 }
 
 impl ModelActionAffect {
-    pub fn is_affected(&self) -> bool {
+    pub const fn is_affected(&self) -> bool {
         matches!(self, ModelActionAffect::Affected)
     }
 }

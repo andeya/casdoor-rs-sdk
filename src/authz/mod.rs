@@ -2,7 +2,7 @@ mod models;
 
 pub use models::*;
 
-use crate::{Body, Method, QueryArgs, QueryResult, Sdk, SdkResult, NO_BODY};
+use crate::{Body, Method, NO_BODY, QueryArgs, QueryResult, Sdk, SdkResult};
 
 impl Sdk {
     pub async fn get_enforcers(&self, query_args: QueryArgs) -> SdkResult<QueryResult<Enforcer>> {
@@ -61,7 +61,12 @@ impl Sdk {
         .await?
         .into_data_default()
     }
-    pub async fn update_policy(&self, enforcer_name: String, old_policy: &CasbinRule, new_policy: &CasbinRule) -> SdkResult<bool> {
+    pub async fn update_policy(
+        &self,
+        enforcer_name: String,
+        old_policy: &CasbinRule,
+        new_policy: &CasbinRule,
+    ) -> SdkResult<bool> {
         self.request_data(
             Method::POST,
             self.get_url_path("update-policy", false, [("id", self.id(&enforcer_name))])?,
@@ -74,10 +79,14 @@ impl Sdk {
         self.get_models((), query_args).await
     }
     pub async fn get_permissions_by_submitter(&self) -> SdkResult<QueryResult<Permission>> {
-        self.request(Method::GET, self.get_url_path("get-permissions-by-submitter", false, ())?, NO_BODY)
-            .await?
-            .into_result_default()
-            .map(Into::into)
+        self.request(
+            Method::GET,
+            self.get_url_path("get-permissions-by-submitter", false, ())?,
+            NO_BODY,
+        )
+        .await?
+        .into_result_default()
+        .map(Into::into)
     }
     pub async fn get_permissions_by_role(&self, role_name: &str) -> SdkResult<QueryResult<Permission>> {
         self.request(
@@ -93,8 +102,12 @@ impl Sdk {
         self.get_models((), query_args).await
     }
     pub async fn get_roles_by_user(&self, user_id: &str) -> SdkResult<Vec<String>> {
-        self.request_data(Method::GET, self.get_url_path("get-all-roles", false, [("userId", user_id)])?, NO_BODY)
-            .await?
-            .into_data_default()
+        self.request_data(
+            Method::GET,
+            self.get_url_path("get-all-roles", false, [("userId", user_id)])?,
+            NO_BODY,
+        )
+        .await?
+        .into_data_default()
     }
 }

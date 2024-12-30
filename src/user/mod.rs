@@ -2,7 +2,7 @@ mod models;
 
 pub use models::*;
 
-use crate::{Body, Method, QueryResult, Sdk, SdkError, SdkResult, StatusCode, NO_BODY};
+use crate::{Body, Method, NO_BODY, QueryResult, Sdk, SdkError, SdkResult, StatusCode};
 
 impl Sdk {
     /// Query and return some models and the total number of models.
@@ -38,15 +38,23 @@ impl Sdk {
     }
 
     pub async fn get_user_by_email(&self, email: String) -> SdkResult<Option<User>> {
-        self.request_data(Method::GET, format!("/api/get-user?owner={}&email={}", self.org_name(), email), NO_BODY)
-            .await?
-            .into_data()
+        self.request_data(
+            Method::GET,
+            format!("/api/get-user?owner={}&email={}", self.org_name(), email),
+            NO_BODY,
+        )
+        .await?
+        .into_data()
     }
 
     pub async fn get_user_by_phone(&self, phone: String) -> SdkResult<Option<User>> {
-        self.request_data(Method::GET, format!("/api/get-user?owner={}&phone={}", self.org_name(), phone), NO_BODY)
-            .await?
-            .into_data()
+        self.request_data(
+            Method::GET,
+            format!("/api/get-user?owner={}&phone={}", self.org_name(), phone),
+            NO_BODY,
+        )
+        .await?
+        .into_data()
     }
 
     pub async fn get_user_by_user_id(&self, user_id: String) -> SdkResult<Option<User>> {
@@ -59,11 +67,16 @@ impl Sdk {
         .into_data()
     }
 
-    /// NOTE: oldPassword is not required, if you don't need, just pass a empty string
+    /// NOTE: oldPassword is not required, if you don't need, just pass a empty
+    /// string
     pub async fn set_user_password(&self, mut args: SetPasswordArgs) -> SdkResult<()> {
         args.user_owner.get_or_insert(self.org_name().to_owned());
-        self.request_data(Method::POST, "/api/set-password", Body::Form(&serde_urlencoded::to_string(args)?))
-            .await?
-            .into_data_default()
+        self.request_data(
+            Method::POST,
+            "/api/set-password",
+            Body::Form(&serde_urlencoded::to_string(args)?),
+        )
+        .await?
+        .into_data_default()
     }
 }

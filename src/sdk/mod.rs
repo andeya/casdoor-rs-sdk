@@ -6,9 +6,9 @@ use cubix::MaybeString;
 pub use errors::*;
 pub use models::*;
 use serde::{
+    Deserialize, Serialize,
     de::{DeserializeOwned, Deserializer},
     ser::{SerializeStruct, Serializer},
-    Deserialize, Serialize,
 };
 
 use crate::{Config, Method, SdkResult, StatusCode};
@@ -35,15 +35,20 @@ pub const NO_BODY: Body<'static, ()> = Body::NoBody::<'static, ()>;
 
 impl Sdk {
     pub fn new(config: Config) -> Self {
-        Self { config: Arc::new(config) }
+        Self {
+            config: Arc::new(config),
+        }
     }
 
     pub fn id(&self, name: &str) -> String {
         format!("{}/{}", self.org_name(), name)
     }
-
+    /// # Panics
+    /// If the org_name or user_name does not match the URL character set, it
+    /// may cause a panic.
     pub fn user_id_query(&self, user_name: &str) -> String {
-        serde_urlencoded::to_string([("userId", format!("{}/{}", self.org_name(), user_name))]).unwrap()
+        serde_urlencoded::to_string([("userId", format!("{}/{}", self.org_name(), user_name))])
+            .expect("Check org_name and user_name")
     }
 
     pub async fn request<Data, Data2>(
@@ -58,12 +63,13 @@ impl Sdk {
     {
         let url = self.config.endpoint().clone() + url_path.as_ref();
         println!("{url}");
-        let mut req = reqwest::Client::new()
-            .request(method, url)
-            .basic_auth(self.config.client_id().clone(), Some(self.config.client_secret().clone()));
+        let mut req = reqwest::Client::new().request(method, url).basic_auth(
+            self.config.client_id().clone(),
+            Some(self.config.client_secret().clone()),
+        );
         match body {
-            Body::Json(body) => req = req.json(body),
-            Body::Form(body) => req = req.form(body),
+            Body::Json(v) => req = req.json(v),
+            Body::Form(v) => req = req.form(v),
             Body::NoBody => {}
         }
         Ok(req.send().await?.json::<ApiResponse<Data, Data2>>().await?)
@@ -96,10 +102,11 @@ impl Sdk {
     pub async fn modify_model<T: Model>(&self, args: ModelModifyArgs<T>) -> SdkResult<bool> {
         // When adding model, the id parameter is not needed.
         let mut url_path = format!("/api/{}-{}?id={}", args.action, T::ident(), args.model.id());
-        if matches!(args.action, ModelAction::Update) && args.columns.is_some() {
-            let columns = args.columns.unwrap();
-            if !columns.is_empty() {
-                url_path += &format!("&columns={}", columns.join(","));
+        if matches!(args.action, ModelAction::Update) {
+            if let Some(columns) = args.columns {
+                if !columns.is_empty() {
+                    url_path = format!("{url_path}&columns={}", columns.join(","));
+                }
             }
         }
         self.request_data::<ModelActionAffect>(Method::POST, url_path, Body::Json(&args.model))
@@ -136,19 +143,31 @@ impl Sdk {
     }
 
     pub async fn get_model_by_name<M: Model>(&self, name: String) -> Result<Option<M>, SdkError> {
-        self.request_data(Method::GET, format!("/api/get-{}?id={}", M::ident(), self.id(&name)), NO_BODY)
-            .await?
-            .into_data()
+        self.request_data(
+            Method::GET,
+            format!("/api/get-{}?id={}", M::ident(), self.id(&name)),
+            NO_BODY,
+        )
+        .await?
+        .into_data()
     }
 
     pub async fn get_default_model<M: Model>(&self, name: String) -> Result<Option<M>, SdkError> {
-        self.request_data(Method::GET, format!("/api/get-default-{}?id={}", M::ident(), self.id(&name)), NO_BODY)
-            .await?
-            .into_data()
+        self.request_data(
+            Method::GET,
+            format!("/api/get-default-{}?id={}", M::ident(), self.id(&name)),
+            NO_BODY,
+        )
+        .await?
+        .into_data()
     }
 
     // Query and return some models and the total number of models.
-    pub(crate) async fn get_models<M: Model>(&self, mid_ident: impl Into<MaybeString>, query_args: impl IsQueryArgs) -> SdkResult<QueryResult<M>> {
+    pub(crate) async fn get_models<M: Model>(
+        &self,
+        mid_ident: impl Into<MaybeString>,
+        query_args: impl IsQueryArgs,
+    ) -> SdkResult<QueryResult<M>> {
         let ident = if let Some(mid) = mid_ident.into().option_string() {
             "get-".to_owned() + &mid + "-"
         } else {
@@ -161,8 +180,17 @@ impl Sdk {
             .map(Into::into)
     }
 
-    pub fn get_url_path(&self, ident: impl Into<String>, add_owner_query: bool, query_args: impl Serialize) -> SdkResult<String> {
-        Ok(format!("/api/{}?{}", ident.into(), self.get_url_query_part(add_owner_query, query_args)?))
+    pub fn get_url_path(
+        &self,
+        ident: impl Into<String>,
+        add_owner_query: bool,
+        query_args: impl Serialize,
+    ) -> SdkResult<String> {
+        Ok(format!(
+            "/api/{}?{}",
+            ident.into(),
+            self.get_url_query_part(add_owner_query, query_args)?
+        ))
     }
 
     pub fn get_url_query_part(&self, add_owner_query: bool, query_args: impl Serialize) -> SdkResult<String> {

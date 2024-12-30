@@ -1,11 +1,11 @@
 use std::{fs::File, io::Read};
 
-use cubix::getset2::Getters;
+use cubix::getset2::Getset2;
 use serde::{Deserialize, Serialize};
 
 /// Config is the core configuration.
-#[derive(Debug, Clone, Serialize, Deserialize, Getters)]
-#[getset(get = "pub")]
+#[derive(Debug, Clone, Serialize, Deserialize, Getset2)]
+#[getset2(get_ref(pub))]
 pub struct Config {
     /// Casdoor Server Url, such as `http://localhost:8000`
     endpoint: String,

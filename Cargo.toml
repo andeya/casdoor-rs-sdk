@@ -9,6 +9,7 @@ documentation = "https://docs.rs/casdoor-rs-sdk"
 readme = "README.md"
 homepage = "https://casdoor.org"
 keywords = ["iam", "auth", "sso", "oidc", "casdoor"]
+categories = ["web-programming"]
 authors = ["Andeya Lee <andeyalee@outlook.com>"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -22,7 +23,7 @@ jsonwebtoken = "9.3.0"
 urlencoding = "2.1"
 oauth2 = "4.1"
 toml = "0.8"
-cubix = ">=0.7.0"
+cubix = ">=0.8.2"
 salvo = { version = ">=0.74", default-features = false, features = [
     "oapi",
 ], optional = true }
